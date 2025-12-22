@@ -19,6 +19,22 @@
             {
                 "source": "/blog/**",
                 "destination": "/blog/view.html"
+            },
+            {
+                "source": "/courses/**",
+                "destination": "/courses/view.html"
+            }
+        ],
+        "redirects": [
+            {
+                "source": "/admin",
+                "destination": "/login",
+                "type": 301
+            },
+            {
+                "source": "/admin/login",
+                "destination": "/login",
+                "type": 301
             }
         ]
     }

@@ -13,7 +13,8 @@ import {
     Menu,
     Calendar,
     Mail,
-    Users
+    Users,
+    BookOpen
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/firebase";
@@ -22,11 +23,13 @@ import { useRouter } from "next/navigation";
 
 const sidebarItems = [
     { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
+    { label: "Courses", href: "/dashboard/courses", icon: BookOpen },
     { label: "Projects", href: "/dashboard/projects", icon: FolderGit },
     { label: "AI Tools", href: "/dashboard/tools", icon: Hammer },
     { label: "Events", href: "/dashboard/events", icon: Calendar },
     { label: "Registrations", href: "/dashboard/registrations", icon: Users },
     { label: "Newsletter", href: "/dashboard/newsletter", icon: Mail },
+    { label: "Messages", href: "/dashboard/messages", icon: Mail },
     { label: "Blog", href: "/dashboard/blog", icon: PenTool },
     { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ];

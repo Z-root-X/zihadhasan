@@ -40,6 +40,19 @@ export default function ContactPage() {
         // Simulate network delay for UX
         await new Promise(resolve => setTimeout(resolve, 1000));
 
+        try {
+            // Save to Firestore
+            await CMSService.addMessage({
+                name,
+                email,
+                subject,
+                message
+            });
+        } catch (error) {
+            console.error("Failed to save message", error);
+            // Continue to mailto fallback
+        }
+
         const targetEmail = config?.contact?.email || "contact@zihadhasan.dev";
         // Construct robust mailto link
         const mailtoLink = `mailto:${targetEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`)}`;

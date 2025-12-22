@@ -52,7 +52,7 @@ export default function CoursesPage() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.1 }}
                         >
-                            <Link href={`/courses/${course.id}`} className="block h-full cursor-pointer">
+                            <Link href={`/courses/view?id=${course.id}`} className="block h-full cursor-pointer">
                                 <GlassCard className="h-full flex flex-col p-0 overflow-hidden group hover:border-primary/30 transition-colors">
                                     <div className="relative aspect-video bg-neutral-900 overflow-hidden">
                                         {course.headerImage ? (

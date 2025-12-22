@@ -74,9 +74,15 @@ service cloud.firestore {
     }
 
     match /registrations/{registrationId} {
-      // CAUTION: Public create allowed for enrollment. Monitor for spam.
-      allow create: if true;
-      allow read, update, delete: if isAdmin();
+      // Allow create if user is authenticated and claiming their own userId (or if public registration is truly intended, but safer to bind to auth)
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      
+      // Allow read if Admin OR if the user owns the registration
+      allow read: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
+      
+      // Allow update if Admin
+      // Users might need to update payment info if rejected? For now, Admin only update for status.
+      allow update, delete: if isAdmin();
     }
 
     // --- Default Deny ---

@@ -1,45 +1,61 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { Course } from "@/components/admin/course-editor";
+import { useEffect, useState, Suspense } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useAuth, UserProfile } from "@/components/auth/auth-provider";
-import { CMSService, Registration } from "@/lib/cms-service";
+import { CMSService, Registration, Course } from "@/lib/cms-service";
 import { Button } from "@/components/ui/button";
 import { Loader2, Users, BookOpen, CheckCircle, Clock } from "lucide-react";
 import { GlassCard } from "@/components/shared/glass-card";
+import { EnrollmentModal } from "@/components/courses/enrollment-modal";
+import { LessonsList } from "@/components/courses/lessons-list";
 
-export default function CourseDetailPage() {
-    const params = useParams();
-    const id = params?.id as string;
+function CourseDetailContent() {
+    const pathname = usePathname();
     const { user, profile, openAuthModal } = useAuth();
 
+    const [id, setId] = useState<string | null>(null);
     const [course, setCourse] = useState<Course | null>(null);
     const [loading, setLoading] = useState(true);
     const [registration, setRegistration] = useState<Registration | null>(null);
     const [regLoading, setRegLoading] = useState(false);
+    const [showEnrollModal, setShowEnrollModal] = useState(false);
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        const queryId = searchParams.get("id");
+        if (queryId) {
+            setId(queryId);
+            return;
+        }
+
+        if (pathname) {
+            const parts = pathname.split('/').filter(Boolean);
+            const extractedId = parts[parts.length - 1];
+            if (extractedId && extractedId !== 'view') {
+                setId(extractedId);
+            }
+        }
+    }, [pathname, searchParams]);
 
     useEffect(() => {
         if (id) {
-            fetchCourse();
+            fetchCourse(id);
         }
     }, [id]);
 
     useEffect(() => {
-        // Check registration status if user is logged in and course is loaded
         if (user && id) {
-            checkRegistration();
+            checkRegistration(id);
         } else {
             setRegistration(null);
         }
     }, [user, id]);
 
-    const fetchCourse = async () => {
+    const fetchCourse = async (courseId: string) => {
         setLoading(true);
         try {
-            const data = await CMSService.getCourse(id);
+            const data = await CMSService.getCourse(courseId);
             setCourse(data);
         } catch (error) {
             console.error("Failed to fetch course", error);
@@ -48,10 +64,10 @@ export default function CourseDetailPage() {
         }
     };
 
-    const checkRegistration = async () => {
+    const checkRegistration = async (courseId: string) => {
         if (!user?.email) return;
         try {
-            const reg = await CMSService.getUserCourseRegistration(user.email, id);
+            const reg = await CMSService.getUserCourseRegistration(user.uid, courseId);
             setRegistration(reg);
         } catch (error) {
             console.error("Failed to check registration", error);
@@ -64,7 +80,7 @@ export default function CourseDetailPage() {
             return;
         }
 
-        if (!course) return;
+        if (!course || !id) return;
 
         setRegLoading(true);
         try {
@@ -76,8 +92,7 @@ export default function CourseDetailPage() {
             });
 
             if (result.success) {
-                // Refresh registration status
-                await checkRegistration();
+                await checkRegistration(id);
             } else {
                 alert("Enrollment failed: " + result.error);
             }
@@ -88,6 +103,8 @@ export default function CourseDetailPage() {
             setRegLoading(false);
         }
     };
+
+    if (!id) return <div className="min-h-screen pt-24 text-center text-white">Initializing course viewer...</div>;
 
     if (loading) {
         return (
@@ -158,6 +175,11 @@ export default function CourseDetailPage() {
                                 ))}
                             </ul>
                         </GlassCard>
+
+                        {/* Lessons List with Access Control */}
+                        <GlassCard className="p-8">
+                            <LessonsList course={course} registration={registration} />
+                        </GlassCard>
                     </div>
 
                     {/* Sidebar */}
@@ -187,7 +209,13 @@ export default function CourseDetailPage() {
                                 <Button
                                     size="lg"
                                     className="w-full text-lg font-bold"
-                                    onClick={handleEnroll}
+                                    onClick={() => {
+                                        if (user) {
+                                            setShowEnrollModal(true);
+                                        } else {
+                                            openAuthModal();
+                                        }
+                                    }}
                                     disabled={regLoading}
                                 >
                                     {regLoading ? (
@@ -200,9 +228,14 @@ export default function CourseDetailPage() {
                                 </Button>
                             )}
 
-                            <p className="text-xs text-center text-gray-500">
-                                30-day money-back guarantee. Lifetime access.
-                            </p>
+                            {course && (
+                                <EnrollmentModal
+                                    course={course}
+                                    open={showEnrollModal}
+                                    onOpenChange={setShowEnrollModal}
+                                    onSuccess={() => checkRegistration(course.id!)}
+                                />
+                            )}
 
                             <div className="pt-6 border-t border-white/10 space-y-4">
                                 <div className="flex items-center gap-3 text-sm text-gray-400">
@@ -219,5 +252,13 @@ export default function CourseDetailPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function CourseViewerPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen pt-24 text-center text-white">Loading viewer...</div>}>
+            <CourseDetailContent />
+        </Suspense>
     );
 }

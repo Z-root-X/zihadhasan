@@ -38,6 +38,8 @@ export interface Registration {
     name: string;
     phone?: string;
     trxId?: string;
+    paymentMethod?: string; // Bkash, Nagad, etc.
+    additionalInfo?: string;
     status: "approved" | "pending";
     registeredAt: Timestamp;
 }
@@ -66,6 +68,16 @@ export interface Tool {
 export interface SocialLink {
     platform: "github" | "twitter" | "linkedin" | "email" | "youtube" | "facebook" | "instagram";
     url: string;
+}
+
+export interface Message {
+    id?: string;
+    name: string;
+    email: string;
+    subject: string;
+    message: string;
+    read: boolean;
+    createdAt: Timestamp;
 }
 
 export interface Subscriber {
@@ -183,6 +195,15 @@ export const CMSService = {
     updateTool: async (id: string, data: Partial<Tool>) => {
         const docRef = doc(db, "tools", id);
         await updateDoc(docRef, data);
+    },
+
+    // --- Messages ---
+    addMessage: async (msg: Omit<Message, "id" | "createdAt" | "read">) => {
+        return await addDoc(collection(db, "messages"), {
+            ...msg,
+            read: false,
+            createdAt: Timestamp.now(),
+        });
     },
 
     // --- Global Settings ---
@@ -420,6 +441,14 @@ export const CMSService = {
         await deleteDoc(doc(db, "posts", id));
     },
 
+    // --- Registrations Queries ---
+    getRegistrationsByUser: async (userId: string) => {
+        // Query by userId to match security rules
+        const q = query(collection(db, "registrations"), where("userId", "==", userId), orderBy("registeredAt", "desc"));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Registration));
+    },
+
     // --- Courses ---
     getCourses: async () => {
         // Get all courses (Admin)
@@ -430,13 +459,10 @@ export const CMSService = {
 
     getPublishedCourses: async () => {
         // Get only published courses (Public)
-        // Note: Simple filter for now to avoid index creation delay. 
-        // In prod with 1000s courses, use where("published", "==", true).
-        const q = query(collection(db, "courses"));
+        // MUST use where clause to match Security Rules condition (allow read if published == true)
+        const q = query(collection(db, "courses"), where("published", "==", true));
         const snapshot = await getDocs(q);
-        return snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() } as Course))
-            .filter(c => c.published);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
     },
 
     getCourse: async (id: string) => {
@@ -473,11 +499,15 @@ export const CMSService = {
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Registration));
     },
 
-    registerForCourse: async (courseId: string, userDetails: { userId?: string; email: string; name: string; phone?: string; trxId?: string }) => {
+    registerForCourse: async (courseId: string, userDetails: { userId?: string; email: string; name: string; phone?: string; trxId?: string; paymentMethod?: string; additionalInfo?: string }) => {
         const registrationRef = doc(collection(db, "registrations"));
         try {
-            // Check duplicates (client-side of query)
-            const q = query(collection(db, "registrations"), where("courseId", "==", courseId), where("email", "==", userDetails.email));
+            // Check duplicates (client-side of query) which aligns with Security Rules (must filter by userId)
+            const q = query(
+                collection(db, "registrations"),
+                where("courseId", "==", courseId),
+                where("userId", "==", userDetails.userId)
+            );
             const existing = await getDocs(q);
             if (!existing.empty) return { success: false, error: "Already registered for this course" };
 
@@ -494,8 +524,8 @@ export const CMSService = {
         }
     },
 
-    getUserCourseRegistration: async (email: string, courseId: string) => {
-        const q = query(collection(db, "registrations"), where("courseId", "==", courseId), where("email", "==", email), limit(1));
+    getUserCourseRegistration: async (userId: string, courseId: string) => {
+        const q = query(collection(db, "registrations"), where("courseId", "==", courseId), where("userId", "==", userId), limit(1));
         const snapshot = await getDocs(q);
         if (snapshot.empty) return null;
         const doc = snapshot.docs[0];

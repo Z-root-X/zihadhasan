@@ -8,6 +8,7 @@ import { GoogleTagManager } from "@/components/google-tag-manager";
 import { generatePersonSchema } from "@/lib/schema-generator";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { AuthModal } from "@/components/auth/auth-modal";
+import { MobileDock } from "@/components/shared/mobile-dock";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -113,6 +114,7 @@ export default function RootLayout({
                 }}
               />
               {children}
+              <MobileDock />
             </AuthProvider>
           </SmoothScroll>
         </ThemeProvider>

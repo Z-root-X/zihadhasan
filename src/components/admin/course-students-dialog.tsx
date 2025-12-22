@@ -18,7 +18,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2, Trash2, UserX } from "lucide-react";
+import { Loader2, Trash2, UserX, CheckCircle, Edit } from "lucide-react";
 import { format } from "date-fns";
 
 interface CourseStudentsDialogProps {
@@ -67,15 +67,74 @@ export function CourseStudentsDialog({ courseId, courseTitle, open, onOpenChange
         }
     };
 
+    // ... inside CourseStudentsDialog
+    const [editingStudent, setEditingStudent] = useState<Registration | null>(null);
+
+    const handleApprove = async (registrationId: string) => {
+        try {
+            await CMSService.approveRegistration(registrationId);
+            setStudents(students.map(s => s.id === registrationId ? { ...s, status: 'approved' } : s));
+        } catch (error) {
+            console.error("Failed to approve", error);
+            alert("Failed to approve student.");
+        }
+    };
+
+    const handleUpdateStudent = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingStudent?.id) return;
+
+        try {
+            await CMSService.updateRegistration(editingStudent.id, {
+                trxId: editingStudent.trxId,
+                phone: editingStudent.phone,
+                name: editingStudent.name
+            });
+            setStudents(students.map(s => s.id === editingStudent.id ? editingStudent : s));
+            setEditingStudent(null);
+        } catch (error) {
+            console.error(error);
+            alert("Update failed");
+        }
+    };
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl bg-neutral-900 border-white/10 text-white">
+            <DialogContent className="max-w-6xl bg-neutral-900 border-white/10 text-white max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Students: {courseTitle}</DialogTitle>
                     <DialogDescription className="text-gray-400">
-                        Manage enrolled students for this course.
+                        Manage enrolled students and verify payments.
                     </DialogDescription>
                 </DialogHeader>
+
+                {editingStudent && (
+                    <div className="mb-6 p-4 bg-white/5 border border-white/10 rounded-lg">
+                        <h4 className="font-bold mb-4 text-primary">Edit Student Info</h4>
+                        <form onSubmit={handleUpdateStudent} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                            <div className="space-y-2">
+                                <label className="text-xs">Trx ID</label>
+                                <input
+                                    className="w-full bg-black/40 border border-white/10 rounded px-2 py-1"
+                                    value={editingStudent.trxId || ''}
+                                    onChange={e => setEditingStudent({ ...editingStudent, trxId: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs">Phone</label>
+                                <input
+                                    className="w-full bg-black/40 border border-white/10 rounded px-2 py-1"
+                                    value={editingStudent.phone || ''}
+                                    onChange={e => setEditingStudent({ ...editingStudent, phone: e.target.value })}
+                                />
+                            </div>
+                            <div className="flex gap-2">
+                                <Button size="sm" type="submit">Save Changes</Button>
+                                <Button size="sm" variant="ghost" onClick={() => setEditingStudent(null)}>Cancel</Button>
+                            </div>
+                        </form>
+                    </div>
+                )}
 
                 <div className="mt-4">
                     {loading ? (
@@ -92,8 +151,8 @@ export function CourseStudentsDialog({ courseId, courseTitle, open, onOpenChange
                             <Table>
                                 <TableHeader className="bg-white/5">
                                     <TableRow className="border-white/10 hover:bg-white/5">
-                                        <TableHead className="text-gray-400">Name</TableHead>
-                                        <TableHead className="text-gray-400">Email</TableHead>
+                                        <TableHead className="text-gray-400">Name/Email</TableHead>
+                                        <TableHead className="text-gray-400">Payment Info</TableHead>
                                         <TableHead className="text-gray-400">Status</TableHead>
                                         <TableHead className="text-gray-400">Joined</TableHead>
                                         <TableHead className="text-right text-gray-400">Actions</TableHead>
@@ -102,8 +161,22 @@ export function CourseStudentsDialog({ courseId, courseTitle, open, onOpenChange
                                 <TableBody>
                                     {students.map((student) => (
                                         <TableRow key={student.id} className="border-white/10 hover:bg-white/5">
-                                            <TableCell className="font-medium">{student.name}</TableCell>
-                                            <TableCell>{student.email}</TableCell>
+                                            <TableCell>
+                                                <div className="font-medium">{student.name}</div>
+                                                <div className="text-xs text-gray-400">{student.email}</div>
+                                                {student.additionalInfo && (
+                                                    <div className="text-xs text-yellow-400/80 mt-1">Note: {student.additionalInfo}</div>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="text-sm">
+                                                    <span className="text-gray-500">Trx:</span> <span className="font-mono text-white">{student.trxId || "N/A"}</span>
+                                                </div>
+                                                <div className="text-xs text-gray-400">
+                                                    <span className="text-gray-500">Phone:</span> {student.phone || "N/A"}
+                                                </div>
+                                                <div className="text-xs text-gray-500 uppercase">{student.paymentMethod || "N/A"}</div>
+                                            </TableCell>
                                             <TableCell>
                                                 <span className={`px-2 py-0.5 rounded text-xs lowercase ${student.status === 'approved' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
                                                     }`}>
@@ -114,15 +187,40 @@ export function CourseStudentsDialog({ courseId, courseTitle, open, onOpenChange
                                                 {student.registeredAt?.seconds ? format(student.registeredAt.toDate(), "MMM d, yyyy") : "-"}
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => student.id && handleKick(student.id)}
-                                                    disabled={kickingId === student.id}
-                                                    className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
-                                                >
-                                                    {kickingId === student.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                                                </Button>
+                                                <div className="flex items-center justify-end gap-2">
+                                                    {student.status !== 'approved' && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="text-green-400 hover:text-green-300 hover:bg-green-900/20 h-8 w-8 p-0"
+                                                            title="Approve"
+                                                            onClick={() => student.id && handleApprove(student.id)}
+                                                        >
+                                                            <CheckCircle className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
+
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 h-8 w-8 p-0"
+                                                        title="Edit Info"
+                                                        onClick={() => setEditingStudent(student)}
+                                                    >
+                                                        <Edit className="h-4 w-4" />
+                                                    </Button>
+
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-red-400 hover:text-red-300 hover:bg-red-900/20 h-8 w-8 p-0"
+                                                        title="Reject/Kick"
+                                                        onClick={() => student.id && handleKick(student.id)}
+                                                        disabled={kickingId === student.id}
+                                                    >
+                                                        {kickingId === student.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                                    </Button>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))}
