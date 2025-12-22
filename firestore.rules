@@ -1,0 +1,87 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+    
+    // Check if the user is the hardcoded Super Admin
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'zihad.connects@gmail.com';
+    }
+    
+    // Check if the user is the owner of the document
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // --- Users Collection (The Core Hub) ---
+    match /users/{userId} {
+      // Admin can do anything. Owner can read their own profile.
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Create: Allow user to create their own profile (e.g. on signup)
+      allow create: if isOwner(userId);
+      
+      // Update: Owner can update BUT cannot change email or role
+      allow update: if isAdmin() || (
+        isOwner(userId) 
+        && request.resource.data.email == resource.data.email 
+        && request.resource.data.role == resource.data.role
+      );
+      
+      // Delete: Only Admin can delete users (for safety)
+      allow delete: if isAdmin();
+    }
+
+    // --- Courses Collection (LMS) ---
+    match /courses/{courseId} {
+      // Public read if published. Admin can read all.
+      allow read: if (resource.data.published == true) || isAdmin();
+      // Only Admin can manage courses
+      allow write: if isAdmin();
+    }
+
+    // --- Existing Portfolio Collections (Enhanced Security) ---
+    
+    match /subscribers/{docId} {
+      allow create: if true;
+      allow read, delete: if isAdmin(); // Moved from "auth != null" to "isAdmin"
+    }
+
+    match /events/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /projects/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /tools/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /posts/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /registrations/{registrationId} {
+      // CAUTION: Public create allowed for enrollment. Monitor for spam.
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // --- Default Deny ---
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

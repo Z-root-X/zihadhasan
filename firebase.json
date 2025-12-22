@@ -1,0 +1,25 @@
+{
+    "firestore": {
+        "rules": "firestore.rules"
+    },
+    "storage": {
+        "rules": "storage.rules"
+    },
+    "hosting": {
+        "public": "out",
+        "cleanUrls": true,
+        "trailingSlash": false,
+        "ignore": [
+            "firebase.json",
+            "**/.*",
+            "**/node_modules/**",
+            "**/__next*/**"
+        ],
+        "rewrites": [
+            {
+                "source": "/blog/**",
+                "destination": "/blog/view.html"
+            }
+        ]
+    }
+}
