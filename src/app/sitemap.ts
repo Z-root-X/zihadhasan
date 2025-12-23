@@ -33,9 +33,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.7,
     }));
 
-    // Dynamic Projects (if we had detailed project pages, but we mostly have external links)
+    // Dynamic Courses
+    const courses = await CMSService.getPublishedCourses();
+    const courseRoutes = courses.map((course) => ({
+        url: `${baseUrl}/courses/${course.id}`,
+        lastModified: course.createdAt ? new Date(course.createdAt.seconds * 1000) : new Date(),
+        changeFrequency: 'weekly' as const,
+        priority: 0.8,
+    }));
+
     // Dynamic Events? Maybe not critical for SEO if they expire, but good to have if we have detail pages.
     // For now, let's keep it simple.
 
-    return [...routes, ...blogRoutes];
+    return [...routes, ...blogRoutes, ...courseRoutes];
 }

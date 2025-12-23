@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Search, CheckCircle, XCircle, Download, Pencil, Trash2, Filter } from "lucide-react";
+import { Loader2, Search, CheckCircle, XCircle, Download, Pencil, Trash2, Filter, Eye } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
@@ -25,6 +25,7 @@ export default function RegistrationsPage() {
     const [selectedStatus, setSelectedStatus] = useState("all");
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [editingRegistration, setEditingRegistration] = useState<Registration | null>(null);
+    const [viewingProof, setViewingProof] = useState<string | null>(null);
 
     useEffect(() => {
         loadData();
@@ -48,7 +49,6 @@ export default function RegistrationsPage() {
         }
     }
 
-    // ... handleUpdateRegistration, handleApprove, handleReject (same as before) ...
     const handleUpdateRegistration = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingRegistration || !editingRegistration.id) return;
@@ -150,7 +150,6 @@ export default function RegistrationsPage() {
         downloadCSV(`registrations_export_${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
     };
 
-    // ... inside component loading check
     if (loading) {
         return (
             <div className="space-y-6">
@@ -252,8 +251,7 @@ export default function RegistrationsPage() {
                         <TableRow className="border-white/10 hover:bg-white/5">
                             <TableHead className="text-gray-300">User</TableHead>
                             <TableHead className="text-gray-300">Event / Course</TableHead>
-                            <TableHead className="text-gray-300">Payment Info</TableHead>
-                            <TableHead className="text-gray-300">Proof</TableHead>
+                            <TableHead className="text-gray-300">Verification Info</TableHead>
                             <TableHead className="text-gray-300">Status</TableHead>
                             <TableHead className="text-right text-gray-300">Actions</TableHead>
                         </TableRow>
@@ -261,7 +259,7 @@ export default function RegistrationsPage() {
                     <TableBody>
                         {filteredRegistrations.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center h-24 text-gray-400">
+                                <TableCell colSpan={5} className="text-center h-24 text-gray-400">
                                     No registrations found.
                                 </TableCell>
                             </TableRow>
@@ -285,26 +283,33 @@ export default function RegistrationsPage() {
                                             <div className="text-xs text-gray-500 mt-1">{reg.id}</div>
                                         </TableCell>
                                         <TableCell>
-                                            {reg.trxId ? (
-                                                <Badge variant="outline" className="font-mono border-blue-500/50 text-blue-400 bg-blue-500/10">
-                                                    {reg.trxId}
-                                                </Badge>
-                                            ) : (
-                                                <span className="text-xs text-gray-500 italic">Free/No TrxID</span>
-                                            )}
-                                            {reg.phone && <div className="text-xs text-gray-500 mt-1">{reg.phone}</div>}
-                                        </TableCell>
-                                        <TableCell>
-                                            {reg.screenshotUrl ? (
-                                                <a href={reg.screenshotUrl} target="_blank" rel="noopener noreferrer" className="block w-16 h-10 rounded overflow-hidden border border-white/20 hover:border-primary transition-colors relative group">
-                                                    <img src={reg.screenshotUrl} alt="Proof" className="w-full h-full object-cover" />
-                                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                                        <Search className="h-4 w-4 text-white" />
+                                            <div className="flex items-start gap-4">
+                                                {/* Text Details */}
+                                                <div className="flex flex-col gap-1 min-w-[120px]">
+                                                    {reg.trxId ? (
+                                                        <Badge variant="outline" className="font-mono border-blue-500/50 text-blue-400 bg-blue-500/10 w-fit">
+                                                            {reg.trxId}
+                                                        </Badge>
+                                                    ) : (
+                                                        <span className="text-xs text-gray-500 italic">Free / No TrxID</span>
+                                                    )}
+                                                    {reg.paymentMethod && <span className="text-xs text-gray-400 capitalize">{reg.paymentMethod}</span>}
+                                                    {reg.phone && <span className="text-xs text-gray-500">{reg.phone}</span>}
+                                                </div>
+
+                                                {/* Image Preview */}
+                                                {reg.screenshotUrl && (
+                                                    <div
+                                                        className="relative group cursor-pointer h-16 w-24 shrink-0 rounded-md overflow-hidden border border-white/10 bg-black/20"
+                                                        onClick={() => setViewingProof(reg.screenshotUrl || null)}
+                                                    >
+                                                        <img src={reg.screenshotUrl} alt="Proof" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                                            <Eye className="h-5 w-5 text-white drop-shadow-md" />
+                                                        </div>
                                                     </div>
-                                                </a>
-                                            ) : (
-                                                <span className="text-xs text-gray-600">No Img</span>
-                                            )}
+                                                )}
+                                            </div>
                                         </TableCell>
                                         <TableCell>
                                             <Badge className={`${reg.status === 'approved' ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'}`}>
@@ -366,7 +371,6 @@ export default function RegistrationsPage() {
                 </Table>
             </GlassCard>
 
-            {/* Edit Dialog (Kept same) */}
             <Dialog open={!!editingRegistration} onOpenChange={(open) => !open && setEditingRegistration(null)}>
                 <DialogContent>
                     <DialogHeader>
@@ -415,6 +419,20 @@ export default function RegistrationsPage() {
                             </div>
                         </form>
                     )}
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!viewingProof} onOpenChange={(open) => !open && setViewingProof(null)}>
+                <DialogContent className="max-w-3xl bg-black/90 border-white/10 p-1">
+                    <div className="relative w-full h-[80vh] flex items-center justify-center bg-black">
+                        {viewingProof && (
+                            <img
+                                src={viewingProof}
+                                alt="Payment Proof"
+                                className="max-w-full max-h-full object-contain"
+                            />
+                        )}
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>

@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 import { CMSService } from "@/lib/cms-service";
 import { useAuth } from "@/components/auth/auth-provider";
 import { User as UserIcon } from "lucide-react";
+import { NotificationBell } from "@/components/shared/notification-bell";
 
 const baseNavItems = [
     { name: "Home", href: "/", feature: null },
@@ -102,21 +103,24 @@ export function Navbar() {
                     {/* CTA & Auth */}
                     <div className="hidden md:flex items-center gap-4">
                         {user ? (
-                            <Link href="/my-account" className="flex items-center gap-2 group">
-                                <div className="h-9 w-9 rounded-full bg-white/10 overflow-hidden border border-white/20 group-hover:border-primary/50 transition-colors relative">
-                                    {profile?.photoURL ? (
-                                        <img src={profile.photoURL} alt="Profile" className="h-full w-full object-cover" />
-                                    ) : (
-                                        <div className="h-full w-full flex items-center justify-center">
-                                            <UserIcon className="h-5 w-5 text-white/70" />
-                                        </div>
-                                    )}
-                                    {/* Red Dot for Pending Verification */}
-                                    {hasPending && (
-                                        <div className="absolute top-0 right-0 h-2.5 w-2.5 bg-red-500 rounded-full border border-black" title="Pending Action" />
-                                    )}
-                                </div>
-                            </Link>
+                            <div className="flex items-center gap-3">
+                                <NotificationBell />
+                                <Link href="/my-account" className="flex items-center gap-2 group">
+                                    <div className="h-9 w-9 rounded-full bg-white/10 overflow-hidden border border-white/20 group-hover:border-primary/50 transition-colors relative">
+                                        {profile?.photoURL ? (
+                                            <img src={profile.photoURL} alt="Profile" className="h-full w-full object-cover" />
+                                        ) : (
+                                            <div className="h-full w-full flex items-center justify-center">
+                                                <UserIcon className="h-5 w-5 text-white/70" />
+                                            </div>
+                                        )}
+                                        {/* Red Dot for Pending Verification */}
+                                        {hasPending && (
+                                            <div className="absolute top-0 right-0 h-2.5 w-2.5 bg-red-500 rounded-full border border-black" title="Pending Action" />
+                                        )}
+                                    </div>
+                                </Link>
+                            </div>
                         ) : (
                             <Button
                                 variant="ghost"

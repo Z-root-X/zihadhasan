@@ -81,6 +81,16 @@ export interface Message {
     createdAt: Timestamp;
 }
 
+
+export interface UserNotification {
+    id?: string;
+    title: string;
+    message: string;
+    read: boolean;
+    createdAt: Timestamp;
+    link?: string;
+}
+
 export interface Subscriber {
     id?: string;
     email: string;
@@ -307,6 +317,15 @@ export const CMSService = {
         }
     },
 
+    // --- Notifications ---
+    createNotification: async (userId: string, notification: Omit<UserNotification, "id" | "createdAt" | "read">) => {
+        return await addDoc(collection(db, "users", userId, "notifications"), {
+            ...notification,
+            read: false,
+            createdAt: Timestamp.now(),
+        });
+    },
+
     // Admin Action: Approve Registration
     approveRegistration: async (registrationId: string) => {
         const regRef = doc(db, "registrations", registrationId);
@@ -318,6 +337,10 @@ export const CMSService = {
 
                 const regData = regDoc.data() as Registration;
                 if (regData.status === "approved") throw "Already approved";
+
+                let notificationTitle = "Registration Approved";
+                let notificationMessage = "Your registration has been approved.";
+                let notificationLink = "/courses"; // Default redirect
 
                 // Only check Event limits if it's an Event registration
                 if (regData.eventId) {
@@ -331,9 +354,31 @@ export const CMSService = {
                     }
 
                     transaction.update(eventRef, { registeredCount: (eventData.registeredCount || 0) + 1 });
+                    notificationTitle = "Event Registration Approved";
+                    notificationMessage = `Your registration for "${eventData.title}" is confirmed!`;
+                    notificationLink = `/events`;
+                } else if (regData.courseId) {
+                    // Fetch course title for better message
+                    const courseRef = doc(db, "courses", regData.courseId);
+                    const courseDoc = await transaction.get(courseRef);
+                    if (courseDoc.exists()) {
+                        const courseTitle = courseDoc.data().title;
+                        notificationMessage = `You now have access to "${courseTitle}".`;
+                        notificationLink = `/learning/${regData.courseId}`;
+                    }
                 }
 
                 transaction.update(regRef, { status: "approved" });
+
+                // Create Notification Doc
+                const notifRef = doc(collection(db, "users", regData.userId!, "notifications"));
+                transaction.set(notifRef, {
+                    title: notificationTitle,
+                    message: notificationMessage,
+                    link: notificationLink,
+                    read: false,
+                    createdAt: Timestamp.now()
+                });
             });
             return { success: true };
         } catch (e) {
