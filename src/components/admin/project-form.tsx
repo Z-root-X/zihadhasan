@@ -10,6 +10,7 @@ import { Project } from "@/lib/cms-service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ImageUploader } from "@/components/admin/image-uploader";
 import {
     Dialog,
     DialogContent,
@@ -25,8 +26,8 @@ const projectSchema = z.object({
     description: z.string().min(10, "Description must be at least 10 characters"),
     tags: z.string().min(1, "At least one tag is required"), // We'll parse this from comma-separated string
     imageUrl: z.string().url("Must be a valid URL"),
-    liveLink: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-    githubLink: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+    liveLink: z.string().optional().or(z.literal("")),
+    githubLink: z.string().optional().or(z.literal("")),
 });
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
@@ -133,31 +134,11 @@ export function ProjectForm({ open, onOpenChange, onSubmit, initialData }: Proje
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="imageUrl" className="text-white">Image URL</Label>
-                        <div className="flex gap-2">
-                            <Input
-                                id="imageUrl"
-                                {...form.register("imageUrl")}
-                                placeholder="https://i.ibb.co/..."
-                                className="bg-white/5 border-white/10 text-white focus:border-primary/50"
-                            />
-                        </div>
-                        {form.watch("imageUrl") && (
-                            <div className="rounded-lg overflow-hidden border border-white/10 h-32 w-full relative group">
-                                <img
-                                    src={form.watch("imageUrl")}
-                                    alt="Preview"
-                                    className="h-full w-full object-cover"
-                                    onError={(e) => (e.currentTarget.style.display = 'none')}
-                                />
-                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <span className="text-xs font-medium text-white">Preview</span>
-                                </div>
-                            </div>
-                        )}
-                        {form.formState.errors.imageUrl && (
-                            <p className="text-xs text-red-500">{form.formState.errors.imageUrl.message}</p>
-                        )}
+                        <ImageUploader
+                            label="Project Thumbnail"
+                            value={form.watch("imageUrl") || ""}
+                            onChange={(url) => form.setValue("imageUrl", url)}
+                        />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">

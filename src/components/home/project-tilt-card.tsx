@@ -83,20 +83,24 @@ export function ProjectTiltCard({ project }: { project: Project }) {
                 <p className="mb-4 text-sm text-gray-300 line-clamp-2 shadow-black/50 drop-shadow-md">{project.description}</p>
 
                 <div className="flex items-center gap-4">
-                    <Link
-                        href={project.liveLink}
-                        target="_blank"
-                        className="flex items-center gap-2 text-sm font-medium text-white hover:text-primary transition-colors"
-                    >
-                        Live Demo <ArrowUpRight className="h-4 w-4" />
-                    </Link>
-                    <Link
-                        href={project.githubLink}
-                        target="_blank"
-                        className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-white transition-colors"
-                    >
-                        <Github className="h-4 w-4" /> Code
-                    </Link>
+                    {project.liveLink && (
+                        <Link
+                            href={project.liveLink}
+                            target="_blank"
+                            className="flex items-center gap-2 text-sm font-medium text-white hover:text-primary transition-colors"
+                        >
+                            Live Demo <ArrowUpRight className="h-4 w-4" />
+                        </Link>
+                    )}
+                    {project.githubLink && (
+                        <Link
+                            href={project.githubLink}
+                            target="_blank"
+                            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-white transition-colors"
+                        >
+                            <Github className="h-4 w-4" /> Code
+                        </Link>
+                    )}
                 </div>
             </div>
         </motion.div>

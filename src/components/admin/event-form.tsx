@@ -4,13 +4,14 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Loader2, Calendar as CalendarIcon, MapPin, Users, Globe, Image as ImageIcon } from "lucide-react";
+import { Loader2, Calendar as CalendarIcon, MapPin, Users, Globe } from "lucide-react";
 import { Event } from "@/lib/cms-service";
 import { Timestamp } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ImageUploader } from "@/components/admin/image-uploader";
 import {
     Dialog,
     DialogContent,
@@ -45,6 +46,7 @@ interface EventFormProps {
 
 export function EventForm({ open, onOpenChange, onSubmit, initialData }: EventFormProps) {
     const [submitting, setSubmitting] = useState(false);
+    const [imageError, setImageError] = useState(false);
 
     const form = useForm<EventFormValues>({
         resolver: zodResolver(eventSchema),
@@ -68,6 +70,8 @@ export function EventForm({ open, onOpenChange, onSubmit, initialData }: EventFo
             imageUrl: initialData.imageUrl || "",
         } : undefined
     });
+
+    const imageUrl = form.watch("imageUrl");
 
     const handleSubmit = async (values: EventFormValues) => {
         setSubmitting(true);
@@ -132,6 +136,7 @@ export function EventForm({ open, onOpenChange, onSubmit, initialData }: EventFo
                                     type="number"
                                     {...form.register("totalSeats", { valueAsNumber: true })}
                                     className="pl-9 bg-white/5 border-white/10 text-white"
+                                    min={1}
                                 />
                             </div>
                             {form.formState.errors.totalSeats && <p className="text-xs text-red-500">{form.formState.errors.totalSeats.message}</p>}
@@ -172,8 +177,11 @@ export function EventForm({ open, onOpenChange, onSubmit, initialData }: EventFo
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="imageUrl" className="text-white">Event Banner URL (Optional)</Label>
-                        <Input id="imageUrl" {...form.register("imageUrl")} placeholder="https://..." className="bg-white/5 border-white/10 text-white" />
+                        <ImageUploader
+                            label="Event Banner"
+                            value={form.watch("imageUrl") || ""}
+                            onChange={(url) => form.setValue("imageUrl", url)}
+                        />
                     </div>
                 </div>
 

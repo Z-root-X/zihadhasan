@@ -75,7 +75,14 @@ export function RegistrationForm({ eventId, eventTitle, price }: { eventId: stri
                     We have received your request for <strong>{eventTitle}</strong>. <br />
                     You will receive a confirmation email once your payment is verified.
                 </p>
-                <Button onClick={() => setIsSuccess(false)} variant="outline">register another</Button>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <Button onClick={() => window.location.href = '/my-learning'} className="bg-primary text-black hover:bg-primary/90">
+                        View My Ticket
+                    </Button>
+                    <Button onClick={() => setIsSuccess(false)} variant="outline" className="border-white/10 text-white hover:bg-white/10">
+                        Register Another
+                    </Button>
+                </div>
             </motion.div>
         );
     }

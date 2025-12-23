@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { CMSService, Tool } from "@/lib/cms-service";
 import { cn } from "@/lib/utils";
 
-const CATEGORIES = ["All", "Writing", "Design", "Video", "Coding", "General"];
+import { useMemo } from "react";
 
 export default function ToolsPage() {
     const [tools, setTools] = useState<Tool[]>([]);
@@ -30,6 +30,14 @@ export default function ToolsPage() {
         }
         fetchTools();
     }, []);
+
+    // Dynamically extract categories from the fetched tools
+    const categories = useMemo(() => {
+        const uniqueCategories = Array.from(new Set(tools.map(t => t.category).filter(Boolean)));
+        // Sort alphabetically but keep "All" at the start (implied by separate array logic)
+        uniqueCategories.sort();
+        return ["All", ...uniqueCategories];
+    }, [tools]);
 
     const filteredTools = tools.filter((tool) => {
         const matchesSearch = tool.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -74,7 +82,7 @@ export default function ToolsPage() {
 
                 {/* Categories */}
                 <div className="flex flex-wrap gap-2">
-                    {CATEGORIES.map((cat) => (
+                    {categories.map((cat) => (
                         <button
                             key={cat}
                             onClick={() => setActiveCategory(cat)}

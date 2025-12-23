@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Github, Linkedin, Mail, Twitter, Send, MapPin } from "lucide-react";
+import { Github, Linkedin, Mail, Twitter, Send, MapPin, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -62,7 +62,7 @@ export default function ContactPage() {
         window.location.href = mailtoLink;
 
         setIsSubmitting(false);
-        toast.success("Message sent!", { description: "Your specific email client has been opened." });
+        toast.success("Message sent! I'll get back to you soon.", { description: "Your specific email client has been opened." });
         form.reset();
     };
 
@@ -140,7 +140,7 @@ export default function ContactPage() {
                             </div>
 
                             <Button type="submit" disabled={isSubmitting} className="w-full">
-                                {isSubmitting ? "Opening Email Client..." : <><Send className="mr-2 h-4 w-4" /> Send Message</>}
+                                {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</> : <><Send className="mr-2 h-4 w-4" /> Send Message</>}
                             </Button>
                         </form>
                     </GlassCard>

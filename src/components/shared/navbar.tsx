@@ -11,6 +11,8 @@ import { CMSService } from "@/lib/cms-service";
 import { useAuth } from "@/components/auth/auth-provider";
 import { User as UserIcon } from "lucide-react";
 import { NotificationBell } from "@/components/shared/notification-bell";
+import { SearchCommand } from "@/components/shared/search-command";
+import { Search } from "lucide-react";
 
 const baseNavItems = [
     { name: "Home", href: "/", feature: null },
@@ -102,6 +104,16 @@ export function Navbar() {
 
                     {/* CTA & Auth */}
                     <div className="hidden md:flex items-center gap-4">
+                        <button
+                            onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-sm text-muted-foreground hover:bg-white/10 hover:text-white transition-colors group"
+                        >
+                            <Search className="h-3.5 w-3.5 group-hover:text-primary transition-colors" />
+                            <span className="text-xs">Search...</span>
+                            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+                                <span className="text-xs">⌘</span>K
+                            </kbd>
+                        </button>
                         {user ? (
                             <div className="flex items-center gap-3">
                                 <NotificationBell />
@@ -183,6 +195,7 @@ export function Navbar() {
                     </motion.div>
                 )}
             </div>
+            <SearchCommand />
         </header>
     );
 }
