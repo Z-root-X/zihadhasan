@@ -14,6 +14,16 @@ import { GlassCard } from "@/components/shared/glass-card";
 import { downloadCSV } from "@/lib/utils";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function RegistrationsPage() {
     const [registrations, setRegistrations] = useState<Registration[]>([]);
@@ -26,6 +36,7 @@ export default function RegistrationsPage() {
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [editingRegistration, setEditingRegistration] = useState<Registration | null>(null);
     const [viewingProof, setViewingProof] = useState<string | null>(null);
+    const [deletingRegistrationId, setDeletingRegistrationId] = useState<string | null>(null);
 
     useEffect(() => {
         loadData();
@@ -90,19 +101,25 @@ export default function RegistrationsPage() {
         }
     };
 
-    const handleReject = async (id: string | undefined) => {
+    const handleReject = (id: string | undefined) => {
         if (!id) return;
-        if (!confirm("Are you sure you want to reject (delete) this registration?")) return;
+        setDeletingRegistrationId(id);
+    };
 
-        setProcessingId(id);
+    const confirmReject = async () => {
+        if (!deletingRegistrationId) return;
+
+        setProcessingId(deletingRegistrationId);
         try {
-            await CMSService.rejectRegistration(id);
-            setRegistrations(prev => prev.filter(r => r.id !== id));
+            await CMSService.rejectRegistration(deletingRegistrationId);
+            setRegistrations(prev => prev.filter(r => r.id !== deletingRegistrationId));
+            toast.success("Registration rejected successfully.");
         } catch (error) {
             console.error(error);
             toast.error("Error rejecting registration.");
         } finally {
             setProcessingId(null);
+            setDeletingRegistrationId(null);
         }
     };
 
@@ -435,6 +452,24 @@ export default function RegistrationsPage() {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            <AlertDialog open={!!deletingRegistrationId} onOpenChange={(open) => !open && setDeletingRegistrationId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the registration request.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmReject} className="bg-red-600 hover:bg-red-700">
+                            {processingId === deletingRegistrationId ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : null}
+                            Reject & Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
