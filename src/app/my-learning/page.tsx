@@ -4,13 +4,12 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { collection, query, where, getDocs, documentId } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Course } from "@/components/admin/course-editor";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { SmartImage } from "@/components/shared/smart-image";
 import { Button } from "@/components/ui/button";
 import { Lock, PlayCircle } from "lucide-react";
-// Imports removed
+import { CMSService } from "@/lib/cms-service";
 
 export default function MyLearningPage() {
     const { user, loading: authLoading } = useAuth();
@@ -23,13 +22,9 @@ export default function MyLearningPage() {
 
             try {
                 // 1. Get ALL my registrations (pending + approved)
-                const regQuery = query(
-                    collection(db, "registrations"),
-                    where("userId", "==", user.uid)
-                );
-                const regSnap = await getDocs(regQuery);
+                const myRegs = await CMSService.getRegistrationsByUser(user.uid);
 
-                if (regSnap.empty) {
+                if (myRegs.length === 0) {
                     setCourses([]);
                     setLoading(false);
                     return;
@@ -37,10 +32,9 @@ export default function MyLearningPage() {
 
                 // Create a map of courseId -> registration to check status easily
                 const regMap = new Map<string, any>();
-                regSnap.docs.forEach(doc => {
-                    const data = doc.data();
-                    if (data.courseId) {
-                        regMap.set(data.courseId, { id: doc.id, ...data });
+                myRegs.forEach(reg => {
+                    if (reg.courseId) {
+                        regMap.set(reg.courseId, reg);
                     }
                 });
 

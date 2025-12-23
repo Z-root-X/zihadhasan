@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Loader2, ArrowRight } from "lucide-react";
+import { Search, ArrowRight } from "lucide-react";
 import { BlogPost, CMSService } from "@/lib/cms-service";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PublicBlogPage() {
     const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -55,8 +56,18 @@ export default function PublicBlogPage() {
             </div>
 
             {loading ? (
-                <div className="flex justify-center py-20">
-                    <Loader2 className="animate-spin text-primary h-8 w-8" />
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <div key={i} className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
+                            <Skeleton className="aspect-video w-full bg-white/10" />
+                            <div className="p-6 space-y-3">
+                                <Skeleton className="h-4 w-24 bg-white/5" />
+                                <Skeleton className="h-6 w-3/4 bg-white/10" />
+                                <Skeleton className="h-4 w-full bg-white/5" />
+                                <Skeleton className="h-4 w-full bg-white/5" />
+                            </div>
+                        </div>
+                    ))}
                 </div>
             ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

@@ -28,13 +28,15 @@ export function Navbar() {
     const [showEvents, setShowEvents] = useState(true);
     const { user, profile, openAuthModal } = useAuth();
 
+    const [hasPending, setHasPending] = useState(false);
+
     useEffect(() => {
         const handleScroll = () => {
             setScrolled(window.scrollY > 20);
         };
         window.addEventListener("scroll", handleScroll);
 
-        // Fetch Feature Flags - Simplified for brevity in replacement but kept logic
+        // Fetch Feature Flags
         CMSService.getGlobalSettings().then(data => {
             if (data?.features) {
                 const f = data.features;
@@ -49,8 +51,16 @@ export function Navbar() {
             }
         });
 
+        // Check for pending registrations (Notification Dot)
+        if (user) {
+            CMSService.getRegistrationsByUser(user.uid).then(regs => {
+                const pending = regs.some(r => r.status === 'pending');
+                setHasPending(pending);
+            }).catch(console.error);
+        }
+
         return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
+    }, [user]);
 
     return (
         <header
@@ -102,7 +112,9 @@ export function Navbar() {
                                         </div>
                                     )}
                                     {/* Red Dot for Pending Verification */}
-                                    <div className="absolute top-0 right-0 h-2.5 w-2.5 bg-red-500 rounded-full border border-black" title="Pending Action" />
+                                    {hasPending && (
+                                        <div className="absolute top-0 right-0 h-2.5 w-2.5 bg-red-500 rounded-full border border-black" title="Pending Action" />
+                                    )}
                                 </div>
                             </Link>
                         ) : (

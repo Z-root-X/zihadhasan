@@ -6,13 +6,16 @@ import { Course, Lesson, Registration } from "@/lib/cms-service";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
+import { Button } from "@/components/ui/button";
+
 interface LessonsListProps {
     course: Course;
     registration: Registration | null;
     className?: string;
+    onEnroll?: () => void;
 }
 
-export function LessonsList({ course, registration, className }: LessonsListProps) {
+export function LessonsList({ course, registration, className, onEnroll }: LessonsListProps) {
     const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
     const [showLockedModal, setShowLockedModal] = useState(false);
 
@@ -127,36 +130,47 @@ export function LessonsList({ course, registration, className }: LessonsListProp
 
             {/* Locked Lesson Premium Modal */}
             <Dialog open={showLockedModal} onOpenChange={setShowLockedModal}>
-                <DialogContent className="max-w-md bg-black/95 border-white/10 text-white backdrop-blur-xl">
-                    <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
-                            Unlock this Masterclass
-                        </DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="flex flex-col items-center text-center gap-4">
-                            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
-                                <Lock className="h-8 w-8 text-primary" />
-                            </div>
-                            <p className="text-white/70">
-                                This lesson is part of the premium curriculum.
-                                {!registration
-                                    ? " Enroll now to access all lessons, resources, and mentorship."
-                                    : registration.status === 'pending'
-                                        ? " Your enrollment is currently pending approval. Please check back soon!"
-                                        : " Your enrollment status is currently: " + registration.status
-                                }
-                            </p>
+                <DialogContent className="max-w-md p-0 overflow-hidden bg-zinc-950 border-white/10 text-white">
+                    <div className="relative h-32 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center overflow-hidden">
+                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+                        <div className="h-16 w-16 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-2xl relative z-10">
+                            <Lock className="h-8 w-8 text-white drop-shadow-lg" />
                         </div>
                     </div>
-                    {/* Simplified CTA - in a real app this would go to checkout or status page */}
-                    {!registration && (
-                        <div className="flex justify-center">
-                            <a href="#enroll" onClick={() => setShowLockedModal(false)} className="bg-primary hover:bg-primary/90 text-black font-bold py-2 px-6 rounded-full transition-colors">
-                                Enroll Now
-                            </a>
+
+                    <div className="p-6 space-y-4 text-center">
+                        <div>
+                            <h3 className="text-xl font-bold text-white mb-2">Locked Lesson</h3>
+                            <p className="text-gray-400 text-sm">
+                                This content is exclusive to enrolled members. Unlock full access to continue your learning journey.
+                            </p>
                         </div>
-                    )}
+
+                        <div className="pt-2 space-y-3">
+                            {!registration ? (
+                                <Button
+                                    onClick={() => {
+                                        setShowLockedModal(false);
+                                        onEnroll?.();
+                                    }}
+                                    className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white border-0 shadow-lg shadow-purple-500/25 py-6 text-lg font-semibold"
+                                >
+                                    Unlock Full Access
+                                </Button>
+                            ) : (
+                                <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 text-sm">
+                                    Your enrollment is <strong>{registration.status}</strong>. Please wait for admin approval.
+                                </div>
+                            )}
+                            <Button
+                                variant="ghost"
+                                onClick={() => setShowLockedModal(false)}
+                                className="w-full text-gray-400 hover:text-white"
+                            >
+                                Maybe Later
+                            </Button>
+                        </div>
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>

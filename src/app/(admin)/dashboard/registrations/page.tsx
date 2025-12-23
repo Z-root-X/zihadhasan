@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { format } from "date-fns";
 import { GlassCard } from "@/components/shared/glass-card";
 import { downloadCSV } from "@/lib/utils";
+import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function RegistrationsPage() {
     const [registrations, setRegistrations] = useState<Registration[]>([]);
@@ -64,7 +66,7 @@ export default function RegistrationsPage() {
             setEditingRegistration(null);
         } catch (error) {
             console.error(error);
-            alert("Failed to update registration");
+            toast.error("Failed to update registration");
         } finally {
             setProcessingId(null);
         }
@@ -78,11 +80,11 @@ export default function RegistrationsPage() {
             if (result.success) {
                 setRegistrations(prev => prev.map(r => r.id === id ? { ...r, status: "approved" } : r));
             } else {
-                alert("Failed to approve. " + result.error);
+                toast.error("Failed to approve", { description: String(result.error) });
             }
         } catch (error) {
             console.error(error);
-            alert("Error approving registration.");
+            toast.error("Error approving registration.");
         } finally {
             setProcessingId(null);
         }
@@ -98,7 +100,7 @@ export default function RegistrationsPage() {
             setRegistrations(prev => prev.filter(r => r.id !== id));
         } catch (error) {
             console.error(error);
-            alert("Error rejecting registration.");
+            toast.error("Error rejecting registration.");
         } finally {
             setProcessingId(null);
         }
@@ -124,7 +126,7 @@ export default function RegistrationsPage() {
 
     const handleExport = () => {
         if (filteredRegistrations.length === 0) {
-            alert("No data to export");
+            toast.info("No data to export");
             return;
         }
 
@@ -148,7 +150,36 @@ export default function RegistrationsPage() {
         downloadCSV(`registrations_export_${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
     };
 
-    if (loading) return <div className="flex justify-center p-12 text-white"><Loader2 className="animate-spin mr-2" /> Loading data...</div>;
+    // ... inside component loading check
+    if (loading) {
+        return (
+            <div className="space-y-6">
+                <div className="flex justify-between">
+                    <Skeleton className="h-10 w-48 bg-white/10" />
+                    <Skeleton className="h-10 w-32 bg-white/10" />
+                </div>
+                <div className="grid grid-cols-4 gap-4">
+                    <Skeleton className="h-10 w-full bg-white/5" />
+                    <Skeleton className="h-10 w-full bg-white/5" />
+                    <Skeleton className="h-10 w-full bg-white/5" />
+                    <Skeleton className="h-10 w-full bg-white/5" />
+                </div>
+                <div className="rounded-md border border-white/10 bg-white/5 overflow-hidden">
+                    {[1, 2, 3, 4, 5].map(i => (
+                        <div key={i} className="flex items-center p-4 border-b border-white/10 gap-4">
+                            <Skeleton className="h-10 w-10 rounded-full bg-white/10" />
+                            <div className="space-y-2 flex-1">
+                                <Skeleton className="h-4 w-1/3 bg-white/10" />
+                                <Skeleton className="h-3 w-1/4 bg-white/5" />
+                            </div>
+                            <Skeleton className="h-8 w-20 bg-white/10" />
+                            <Skeleton className="h-8 w-20 bg-white/10" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">

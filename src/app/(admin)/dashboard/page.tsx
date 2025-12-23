@@ -6,6 +6,7 @@ import { Hammer, FolderGit, Users, ArrowUpRight, FileText, Settings, Download, D
 import Link from "next/link";
 import { CMSService } from "@/lib/cms-service";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export default function DashboardPage() {
     const [stats, setStats] = useState([
@@ -97,7 +98,7 @@ export default function DashboardPage() {
             document.body.removeChild(link);
         } catch (error) {
             console.error("Failed to download CSV", error);
-            alert("Failed to download data.");
+            toast.error("Failed to download data.");
         } finally {
             setDownloading(false);
         }

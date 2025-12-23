@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Loader2, CreditCard } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
 
 const settingsSchema = z.object({
     heroTitle: z.string().optional(),
@@ -98,10 +99,10 @@ export default function SettingsPage() {
                     nagad: values.paymentNagad
                 }
             });
-            alert("Settings saved successfully!");
+            toast.success("Settings saved successfully!");
         } catch (error) {
             console.error("Failed to save settings", error);
-            alert("Failed to save settings.");
+            toast.error("Failed to save settings.");
         } finally {
             setSaving(false);
         }

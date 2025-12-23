@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Timestamp } from "firebase/firestore";
 
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 export default function EventsPage() {
     const [events, setEvents] = useState<Event[]>([]);
@@ -66,7 +67,7 @@ export default function EventsPage() {
             setDeletingEventId(null);
         } catch (error) {
             console.error(error);
-            alert("Failed to delete event.");
+            toast.error("Failed to delete event.");
         } finally {
             setIsDeleting(false);
         }

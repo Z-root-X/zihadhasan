@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { CMSService, GlobalSettings } from "@/lib/cms-service";
+import { toast } from "sonner";
 
 export default function ContactPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,7 +62,7 @@ export default function ContactPage() {
         window.location.href = mailtoLink;
 
         setIsSubmitting(false);
-        alert("Thanks! Your default email client has been opened with the message.");
+        toast.success("Message sent!", { description: "Your specific email client has been opened." });
         form.reset();
     };
 

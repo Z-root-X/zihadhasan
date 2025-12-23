@@ -6,6 +6,7 @@ import { useAuth, UserProfile } from "@/components/auth/auth-provider";
 import { CMSService, Registration, Course } from "@/lib/cms-service";
 import { Button } from "@/components/ui/button";
 import { Loader2, Users, BookOpen, CheckCircle, Clock } from "lucide-react";
+import { toast } from "sonner";
 import { GlassCard } from "@/components/shared/glass-card";
 import { EnrollmentModal } from "@/components/courses/enrollment-modal";
 import { LessonsList } from "@/components/courses/lessons-list";
@@ -94,11 +95,11 @@ function CourseDetailContent() {
             if (result.success) {
                 await checkRegistration(id);
             } else {
-                alert("Enrollment failed: " + result.error);
+                toast.error("Enrollment failed", { description: String(result.error) });
             }
         } catch (error) {
             console.error("Enrollment error", error);
-            alert("An error occurred during enrollment.");
+            toast.error("An error occurred during enrollment.");
         } finally {
             setRegLoading(false);
         }
@@ -178,7 +179,17 @@ function CourseDetailContent() {
 
                         {/* Lessons List with Access Control */}
                         <GlassCard className="p-8">
-                            <LessonsList course={course} registration={registration} />
+                            <LessonsList
+                                course={course}
+                                registration={registration}
+                                onEnroll={() => {
+                                    if (user) {
+                                        setShowEnrollModal(true);
+                                    } else {
+                                        openAuthModal();
+                                    }
+                                }}
+                            />
                         </GlassCard>
                     </div>
 

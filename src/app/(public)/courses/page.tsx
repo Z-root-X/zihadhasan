@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import { CMSService, Course } from "@/lib/cms-service";
 import { GlassCard } from "@/components/shared/glass-card";
 import { Button } from "@/components/ui/button";
-import { Loader2, BookOpen, Clock, PlayCircle } from "lucide-react";
+import { BookOpen, Clock, PlayCircle } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-provider";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function CoursesPage() {
     const [courses, setCourses] = useState<Course[]>([]);
@@ -40,8 +41,22 @@ export default function CoursesPage() {
             </div>
 
             {loading ? (
-                <div className="flex justify-center py-20">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                        <div key={i} className="h-full rounded-xl border border-white/10 overflow-hidden bg-white/5">
+                            <Skeleton className="aspect-video w-full bg-white/10" />
+                            <div className="p-6 space-y-4">
+                                <Skeleton className="h-6 w-3/4 bg-white/10" />
+                                <Skeleton className="h-4 w-full bg-white/5" />
+                                <Skeleton className="h-4 w-5/6 bg-white/5" />
+                                <div className="pt-4 flex justify-between">
+                                    <Skeleton className="h-4 w-20 bg-white/5" />
+                                    <Skeleton className="h-4 w-20 bg-white/5" />
+                                </div>
+                                <Skeleton className="h-10 w-full rounded-md bg-white/10" />
+                            </div>
+                        </div>
+                    ))}
                 </div>
             ) : courses.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
