@@ -4,9 +4,10 @@ service cloud.firestore {
 
     // --- Helper Functions ---
     
-    // Check if the user is the hardcoded Super Admin
+    // Check if the user is an Admin by reading their profile document
     function isAdmin() {
-      return request.auth != null && request.auth.token.email == 'zihad.connects@gmail.com';
+      return request.auth != null && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
     
     // Check if the user is the owner of the document
@@ -45,7 +46,7 @@ service cloud.firestore {
     
     match /subscribers/{docId} {
       allow create: if true;
-      allow read, delete: if isAdmin(); // Moved from "auth != null" to "isAdmin"
+      allow read, delete: if isAdmin();
     }
 
     match /events/{docId} {
@@ -74,14 +75,13 @@ service cloud.firestore {
     }
 
     match /registrations/{registrationId} {
-      // Allow create if user is authenticated and claiming their own userId (or if public registration is truly intended, but safer to bind to auth)
+      // Allow create if user is authenticated and claiming their own userId
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       
       // Allow read if Admin OR if the user owns the registration
       allow read: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
       
       // Allow update if Admin
-      // Users might need to update payment info if rejected? For now, Admin only update for status.
       allow update, delete: if isAdmin();
     }
 

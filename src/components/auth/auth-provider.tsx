@@ -102,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     // Derived state
-    const isAdmin = profile?.role === "admin" || user?.email === "zihad.connects@gmail.com";
+    const isAdmin = profile?.role === "admin";
 
     return (
         <AuthContext.Provider value={{

@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Loader2, Trash2, UserX, CheckCircle, Edit } from "lucide-react";
+import { toast } from "sonner";
 import { format } from "date-fns";
 
 interface CourseStudentsDialogProps {
@@ -74,9 +75,10 @@ export function CourseStudentsDialog({ courseId, courseTitle, open, onOpenChange
         try {
             await CMSService.approveRegistration(registrationId);
             setStudents(students.map(s => s.id === registrationId ? { ...s, status: 'approved' } : s));
+            toast.success("Student approved successfully");
         } catch (error) {
             console.error("Failed to approve", error);
-            alert("Failed to approve student.");
+            toast.error("Failed to approve student");
         }
     };
 
@@ -92,9 +94,10 @@ export function CourseStudentsDialog({ courseId, courseTitle, open, onOpenChange
             });
             setStudents(students.map(s => s.id === editingStudent.id ? editingStudent : s));
             setEditingStudent(null);
+            toast.success("Student info updated");
         } catch (error) {
             console.error(error);
-            alert("Update failed");
+            toast.error("Update failed");
         }
     };
 

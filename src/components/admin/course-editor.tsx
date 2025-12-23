@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Plus, Trash2, Video, GripVertical, Save } from "lucide-react";
+import { Loader2, Plus, Trash2, Video, GripVertical } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ImageUploader } from "@/components/admin/image-uploader";
+import { toast } from "sonner";
 
 export interface Lesson {
     title: string;
@@ -76,16 +78,18 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
         try {
             if (course?.id) {
                 await updateDoc(doc(db, "courses", course.id), courseData);
+                toast.success("Course updated successfully!");
             } else {
                 await addDoc(collection(db, "courses"), {
                     ...courseData,
                     createdAt: serverTimestamp()
                 });
+                toast.success("Course published successfully!");
             }
             onSave();
         } catch (error) {
             console.error("Failed to save course", error);
-            alert("Failed to save course. Check console.");
+            toast.error("Failed to save course. Check console.");
         } finally {
             setLoading(false);
         }
@@ -218,19 +222,10 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>Cover Image URL</Label>
-                                <div className="aspect-video w-full bg-black/40 rounded-lg overflow-hidden border border-white/10 mb-2">
-                                    {headerImage ? (
-                                        <img src={headerImage} alt="Cover" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <div className="flex items-center justify-center h-full text-white/30 text-xs">No Image</div>
-                                    )}
-                                </div>
-                                <Input
+                                <ImageUploader
+                                    label="Course Header Image"
                                     value={headerImage}
-                                    onChange={e => setHeaderImage(e.target.value)}
-                                    className="bg-black/20 border-white/10 text-white text-xs"
-                                    placeholder="https://..."
+                                    onChange={setHeaderImage}
                                 />
                             </div>
                         </CardContent>

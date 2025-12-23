@@ -14,6 +14,7 @@ interface LessonsListProps {
 
 export function LessonsList({ course, registration, className }: LessonsListProps) {
     const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+    const [showLockedModal, setShowLockedModal] = useState(false);
 
     const isApproved = registration?.status === "approved";
 
@@ -21,8 +22,7 @@ export function LessonsList({ course, registration, className }: LessonsListProp
         if (lesson.isFreePreview || isApproved) {
             setSelectedLesson(lesson);
         } else {
-            // Optional: Shake animation or tooltip explaining why it's locked
-            alert("Please enroll and wait for approval to access this lesson.");
+            setShowLockedModal(true);
         }
     };
 
@@ -46,7 +46,7 @@ export function LessonsList({ course, registration, className }: LessonsListProp
                                     "group flex items-center justify-between p-4 rounded-xl border transition-all duration-300",
                                     isUnlocked
                                         ? "bg-white/5 border-white/10 hover:bg-white/10 cursor-pointer"
-                                        : "bg-black/20 border-white/5 opacity-70 cursor-not-allowed"
+                                        : "bg-black/20 border-white/5 opacity-70 cursor-not-allowed hover:border-primary/30"
                                 )}
                             >
                                 <div className="flex items-center gap-4">
@@ -122,6 +122,41 @@ export function LessonsList({ course, registration, className }: LessonsListProp
                             </div>
                         )}
                     </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Locked Lesson Premium Modal */}
+            <Dialog open={showLockedModal} onOpenChange={setShowLockedModal}>
+                <DialogContent className="max-w-md bg-black/95 border-white/10 text-white backdrop-blur-xl">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">
+                            Unlock this Masterclass
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="flex flex-col items-center text-center gap-4">
+                            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center animate-pulse">
+                                <Lock className="h-8 w-8 text-primary" />
+                            </div>
+                            <p className="text-white/70">
+                                This lesson is part of the premium curriculum.
+                                {!registration
+                                    ? " Enroll now to access all lessons, resources, and mentorship."
+                                    : registration.status === 'pending'
+                                        ? " Your enrollment is currently pending approval. Please check back soon!"
+                                        : " Your enrollment status is currently: " + registration.status
+                                }
+                            </p>
+                        </div>
+                    </div>
+                    {/* Simplified CTA - in a real app this would go to checkout or status page */}
+                    {!registration && (
+                        <div className="flex justify-center">
+                            <a href="#enroll" onClick={() => setShowLockedModal(false)} className="bg-primary hover:bg-primary/90 text-black font-bold py-2 px-6 rounded-full transition-colors">
+                                Enroll Now
+                            </a>
+                        </div>
+                    )}
                 </DialogContent>
             </Dialog>
         </div>

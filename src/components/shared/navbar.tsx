@@ -93,7 +93,7 @@ export function Navbar() {
                     <div className="hidden md:flex items-center gap-4">
                         {user ? (
                             <Link href="/my-account" className="flex items-center gap-2 group">
-                                <div className="h-9 w-9 rounded-full bg-white/10 overflow-hidden border border-white/20 group-hover:border-primary/50 transition-colors">
+                                <div className="h-9 w-9 rounded-full bg-white/10 overflow-hidden border border-white/20 group-hover:border-primary/50 transition-colors relative">
                                     {profile?.photoURL ? (
                                         <img src={profile.photoURL} alt="Profile" className="h-full w-full object-cover" />
                                     ) : (
@@ -101,6 +101,8 @@ export function Navbar() {
                                             <UserIcon className="h-5 w-5 text-white/70" />
                                         </div>
                                     )}
+                                    {/* Red Dot for Pending Verification */}
+                                    <div className="absolute top-0 right-0 h-2.5 w-2.5 bg-red-500 rounded-full border border-black" title="Pending Action" />
                                 </div>
                             </Link>
                         ) : (

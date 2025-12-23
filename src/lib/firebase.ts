@@ -14,3 +14,38 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// Free Power-Ups
+import { getAnalytics, isSupported } from "firebase/analytics";
+import { getRemoteConfig } from "firebase/remote-config";
+import { getPerformance } from "firebase/performance";
+
+export let analytics: any = null;
+export let remoteConfig: any = null;
+export let perf: any = null;
+
+if (typeof window !== "undefined") {
+  isSupported().then((supported) => {
+    if (supported) {
+      analytics = getAnalytics(app);
+      perf = getPerformance(app);
+      remoteConfig = getRemoteConfig(app);
+
+      // Default Config
+      remoteConfig.settings.minimumFetchIntervalMillis = 3600000;
+      remoteConfig.defaultConfig = {
+        "promo_text": "Welcome to Zihad's World",
+      };
+    }
+  });
+
+  // App Check (ReCaptcha Enterprise)
+  // Note: Requires valid site key in environment or console setup.
+  // import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
+  // if (typeof window !== "undefined") {
+  //    initializeAppCheck(app, {
+  //       provider: new ReCaptchaV3Provider('YOUR_RECAPTCHA_SITE_KEY'),
+  //       isTokenAutoRefreshEnabled: true
+  //    });
+  // }
+}

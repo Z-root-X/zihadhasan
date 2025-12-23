@@ -222,6 +222,7 @@ export default function RegistrationsPage() {
                             <TableHead className="text-gray-300">User</TableHead>
                             <TableHead className="text-gray-300">Event / Course</TableHead>
                             <TableHead className="text-gray-300">Payment Info</TableHead>
+                            <TableHead className="text-gray-300">Proof</TableHead>
                             <TableHead className="text-gray-300">Status</TableHead>
                             <TableHead className="text-right text-gray-300">Actions</TableHead>
                         </TableRow>
@@ -261,6 +262,18 @@ export default function RegistrationsPage() {
                                                 <span className="text-xs text-gray-500 italic">Free/No TrxID</span>
                                             )}
                                             {reg.phone && <div className="text-xs text-gray-500 mt-1">{reg.phone}</div>}
+                                        </TableCell>
+                                        <TableCell>
+                                            {reg.screenshotUrl ? (
+                                                <a href={reg.screenshotUrl} target="_blank" rel="noopener noreferrer" className="block w-16 h-10 rounded overflow-hidden border border-white/20 hover:border-primary transition-colors relative group">
+                                                    <img src={reg.screenshotUrl} alt="Proof" className="w-full h-full object-cover" />
+                                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                                        <Search className="h-4 w-4 text-white" />
+                                                    </div>
+                                                </a>
+                                            ) : (
+                                                <span className="text-xs text-gray-600">No Img</span>
+                                            )}
                                         </TableCell>
                                         <TableCell>
                                             <Badge className={`${reg.status === 'approved' ? 'bg-green-500/20 text-green-400' : 'bg-amber-500/20 text-amber-400'}`}>

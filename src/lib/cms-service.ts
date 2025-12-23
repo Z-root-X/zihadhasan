@@ -38,7 +38,8 @@ export interface Registration {
     name: string;
     phone?: string;
     trxId?: string;
-    paymentMethod?: string; // Bkash, Nagad, etc.
+    screenshotUrl?: string; // Payment Proof
+    paymentMethod?: string;
     additionalInfo?: string;
     status: "approved" | "pending";
     registeredAt: Timestamp;
@@ -499,7 +500,7 @@ export const CMSService = {
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Registration));
     },
 
-    registerForCourse: async (courseId: string, userDetails: { userId?: string; email: string; name: string; phone?: string; trxId?: string; paymentMethod?: string; additionalInfo?: string }) => {
+    registerForCourse: async (courseId: string, userDetails: { userId?: string; email: string; name: string; phone?: string; trxId?: string; screenshotUrl?: string; paymentMethod?: string; additionalInfo?: string }) => {
         const registrationRef = doc(collection(db, "registrations"));
         try {
             // Check duplicates (client-side of query) which aligns with Security Rules (must filter by userId)

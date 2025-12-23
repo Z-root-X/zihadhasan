@@ -8,8 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Copy, Check } from "lucide-react";
+import { toast } from "sonner";
 import { CMSService, Course, GlobalSettings } from "@/lib/cms-service";
 import { useAuth } from "@/components/auth/auth-provider";
+import { ImageUploader } from "@/components/admin/image-uploader";
 
 
 interface EnrollmentModalProps {
@@ -30,6 +32,7 @@ export function EnrollmentModal({ course, open, onOpenChange, onSuccess }: Enrol
     const [trxId, setTrxId] = useState("");
     const [paymentMethod, setPaymentMethod] = useState("bkash");
     const [additionalInfo, setAdditionalInfo] = useState("");
+    const [screenshotUrl, setScreenshotUrl] = useState("");
 
     useEffect(() => {
         if (open) {
@@ -56,19 +59,21 @@ export function EnrollmentModal({ course, open, onOpenChange, onSuccess }: Enrol
                 name: user.displayName || "Unknown",
                 phone,
                 trxId,
+                screenshotUrl,
                 paymentMethod,
                 additionalInfo
             });
 
             if (result.success) {
+                toast.success("Enrollment successful! Please wait for admin approval.", { description: "You can check status in My Account." });
                 onSuccess();
                 onOpenChange(false);
             } else {
-                alert("Enrollment Failed: " + result.error);
+                toast.error("Enrollment Failed", { description: String(result.error) });
             }
         } catch (error) {
             console.error(error);
-            alert("An error occurred.");
+            toast.error("An error occurred during enrollment.");
         } finally {
             setLoading(false);
         }
@@ -146,6 +151,15 @@ export function EnrollmentModal({ course, open, onOpenChange, onSuccess }: Enrol
                                 onChange={e => setTrxId(e.target.value)}
                                 placeholder="e.g. 8JKS92KL"
                                 className="bg-black/20 border-white/10 font-mono uppercase"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Payment Screenshot (Optional but Recommended)</Label>
+                            <ImageUploader
+                                value={screenshotUrl}
+                                onChange={setScreenshotUrl}
+                                label="Upload Screenshot"
                             />
                         </div>
 

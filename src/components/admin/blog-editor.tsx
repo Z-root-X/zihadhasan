@@ -14,6 +14,8 @@ import { useRouter } from 'next/navigation';
 import { BlogPost, CMSService } from '@/lib/cms-service';
 import slugify from 'slugify';
 import { Timestamp } from 'firebase/firestore';
+import { ImageUploader } from '@/components/admin/image-uploader';
+import { toast } from 'sonner';
 
 interface BlogEditorProps {
     initialData?: BlogPost;
@@ -157,20 +159,11 @@ export function BlogEditor({ initialData }: BlogEditorProps) {
                     </div>
 
                     <div className="grid gap-2">
-                        <Label className="text-white">Cover Image URL</Label>
-                        <div className="flex gap-2">
-                            <Input
-                                value={coverImage}
-                                onChange={(e) => setCoverImage(e.target.value)}
-                                placeholder="https://..."
-                                className="bg-white/5 border-white/10 text-white"
-                            />
-                            {coverImage && (
-                                <div className="h-10 w-16 relative rounded overflow-hidden border border-white/10 bg-white/5">
-                                    <img src={coverImage} alt="Cover" className="object-cover w-full h-full" />
-                                </div>
-                            )}
-                        </div>
+                        <ImageUploader
+                            label="Cover Image"
+                            value={coverImage}
+                            onChange={setCoverImage}
+                        />
                     </div>
                 </div>
 

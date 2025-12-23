@@ -9,6 +9,7 @@ import { generatePersonSchema } from "@/lib/schema-generator";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { AuthModal } from "@/components/auth/auth-modal";
 import { MobileDock } from "@/components/shared/mobile-dock";
+import { Toaster } from "sonner";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -115,6 +116,7 @@ export default function RootLayout({
               />
               {children}
               <MobileDock />
+              <Toaster position="top-center" richColors theme="dark" />
             </AuthProvider>
           </SmoothScroll>
         </ThemeProvider>
