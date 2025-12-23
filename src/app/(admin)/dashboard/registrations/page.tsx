@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Search, CheckCircle, XCircle, Download, Pencil, Trash2, Filter, Eye } from "lucide-react";
+import { Loader2, Search, CheckCircle, XCircle, Download, Pencil, Trash2, Filter, Eye, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
@@ -36,6 +36,11 @@ export default function RegistrationsPage() {
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [editingRegistration, setEditingRegistration] = useState<Registration | null>(null);
     const [viewingProof, setViewingProof] = useState<string | null>(null);
+    const [zoom, setZoom] = useState(1);
+
+    useEffect(() => {
+        if (!viewingProof) setZoom(1);
+    }, [viewingProof]);
     const [deletingRegistrationId, setDeletingRegistrationId] = useState<string | null>(null);
 
     useEffect(() => {
@@ -316,14 +321,24 @@ export default function RegistrationsPage() {
 
                                                 {/* Image Preview */}
                                                 {reg.screenshotUrl && (
-                                                    <div
-                                                        className="relative group cursor-pointer h-16 w-24 shrink-0 rounded-md overflow-hidden border border-white/10 bg-black/20"
-                                                        onClick={() => setViewingProof(reg.screenshotUrl || null)}
-                                                    >
-                                                        <img src={reg.screenshotUrl} alt="Proof" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
-                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                                            <Eye className="h-5 w-5 text-white drop-shadow-md" />
+                                                    <div className="flex flex-col gap-2">
+                                                        <div
+                                                            className="relative group cursor-pointer h-16 w-24 shrink-0 rounded-md overflow-hidden border border-white/10 bg-black/20"
+                                                            onClick={() => setViewingProof(reg.screenshotUrl || null)}
+                                                        >
+                                                            <img src={reg.screenshotUrl} alt="Proof" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                                                <Eye className="h-5 w-5 text-white drop-shadow-md" />
+                                                            </div>
                                                         </div>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="h-6 text-[10px] w-24 border-white/10 hover:bg-white/5"
+                                                            onClick={() => setViewingProof(reg.screenshotUrl || null)}
+                                                        >
+                                                            <Eye className="mr-1 h-3 w-3" /> View Proof
+                                                        </Button>
                                                     </div>
                                                 )}
                                             </div>
@@ -440,14 +455,68 @@ export default function RegistrationsPage() {
             </Dialog>
 
             <Dialog open={!!viewingProof} onOpenChange={(open) => !open && setViewingProof(null)}>
-                <DialogContent className="max-w-3xl bg-black/90 border-white/10 p-1">
-                    <div className="relative w-full h-[80vh] flex items-center justify-center bg-black">
+                <DialogContent className="max-w-5xl w-full bg-zinc-950 border-white/10 p-0 overflow-hidden flex flex-col h-[90vh]">
+                    {/* Toolbar */}
+                    <div className="flex items-center justify-between p-4 border-b border-white/10 bg-zinc-900/50">
+                        <div className="flex items-center gap-2">
+                            <h3 className="font-medium text-white">Payment Proof</h3>
+                            <span className="text-xs text-white/40 px-2 py-0.5 bg-white/5 rounded-full">
+                                {Math.round(zoom * 100)}%
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline" size="icon"
+                                className="h-8 w-8 bg-zinc-900 border-white/10 hover:bg-white/10"
+                                onClick={() => setZoom(Math.max(0.5, zoom - 0.25))}
+                            >
+                                <ZoomOut className="h-4 w-4" />
+                            </Button>
+                            <Button
+                                variant="outline" size="icon"
+                                className="h-8 w-8 bg-zinc-900 border-white/10 hover:bg-white/10"
+                                onClick={() => setZoom(1)}
+                            >
+                                <RotateCcw className="h-4 w-4" />
+                            </Button>
+                            <Button
+                                variant="outline" size="icon"
+                                className="h-8 w-8 bg-zinc-900 border-white/10 hover:bg-white/10"
+                                onClick={() => setZoom(Math.min(3, zoom + 0.25))}
+                            >
+                                <ZoomIn className="h-4 w-4" />
+                            </Button>
+                            <div className="w-px h-4 bg-white/10 mx-2" />
+                            {viewingProof && (
+                                <Button
+                                    variant="default" size="sm"
+                                    className="h-8 gap-2"
+                                    asChild
+                                >
+                                    <a href={viewingProof} target="_blank" download="proof.jpg" rel="noopener noreferrer">
+                                        <Download className="h-4 w-4" /> Download
+                                    </a>
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Viewer */}
+                    <div className="flex-1 bg-black/50 overflow-auto flex items-center justify-center p-8 relative">
+                        {/* Checkerboard pattern for transparency */}
+                        <div className="absolute inset-0 opacity-10 pointer-events-none bg-[linear-gradient(45deg,#222_25%,transparent_25%,transparent_75%,#222_75%,#222),linear-gradient(45deg,#222_25%,transparent_25%,transparent_75%,#222_75%,#222)] bg-[length:20px_20px] bg-[position:0_0,10px_10px]"></div>
+
                         {viewingProof && (
-                            <img
-                                src={viewingProof}
-                                alt="Payment Proof"
-                                className="max-w-full max-h-full object-contain"
-                            />
+                            <div
+                                style={{ transform: `scale(${zoom})`, transition: 'transform 0.2s ease-out' }}
+                                className="relative z-10 shadow-2xl"
+                            >
+                                <img
+                                    src={viewingProof}
+                                    alt="Payment Proof"
+                                    className="max-w-full max-h-[70vh] object-contain rounded-md border border-white/10"
+                                />
+                            </div>
                         )}
                     </div>
                 </DialogContent>

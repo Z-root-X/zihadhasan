@@ -118,14 +118,18 @@ export function AuthModal() {
 
                     {/* Google Button */}
                     <Button
-                        variant="outline"
+                        type="button"
+                        variant="ghost"
                         onClick={handleGoogleLogin}
-                        className="w-full bg-white text-black hover:bg-gray-100 border-none h-12 font-medium"
+                        className="w-full bg-white text-black hover:bg-zinc-200 border border-transparent h-12 font-medium relative overflow-hidden group"
                         disabled={isLoading}
                     >
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> :
-                            <Chrome className="mr-2 h-4 w-4" />}
-                        Continue with Google
+                        {isLoading ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <Chrome className="mr-2 h-4 w-4 text-black group-hover:scale-110 transition-transform" />
+                        )}
+                        <span className="relative z-10">Continue with Google</span>
                     </Button>
 
                     <div className="relative my-6">

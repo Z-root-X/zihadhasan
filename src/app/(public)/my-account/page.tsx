@@ -9,10 +9,12 @@ import { Loader2, LogOut, CheckCircle, Clock } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
 export default function MyAccountPage() {
     const { user, profile } = useAuth();
+    const router = useRouter();
     const [registrations, setRegistrations] = useState<Registration[]>([]);
     const [courses, setCourses] = useState<{ [key: string]: Course }>({});
     const [loading, setLoading] = useState(true);
@@ -60,7 +62,7 @@ export default function MyAccountPage() {
 
     const handleLogout = async () => {
         await signOut(auth);
-        window.location.href = "/";
+        router.push("/");
     };
 
     if (loading) {

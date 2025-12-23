@@ -6,6 +6,8 @@ import { Calendar, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { generateBlogPostSchema } from "@/lib/schema-generator";
+import sanitizeHtml from "sanitize-html";
+import { NewsletterForm } from "@/components/blog/newsletter-form";
 import "@/styles/syntax-highlight.css";
 
 interface BlogPostRendererProps {
@@ -67,16 +69,23 @@ export function BlogPostRenderer({ post }: BlogPostRendererProps) {
             />
 
             <div className="prose prose-invert prose-lg max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-a:text-purple-400 hover:prose-a:text-purple-300 prose-img:rounded-xl">
-                <div dangerouslySetInnerHTML={{ __html: post.content }} />
+                <div dangerouslySetInnerHTML={{
+                    __html: sanitizeHtml(post.content, {
+                        allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'pre', 'code', 'span']),
+                        allowedAttributes: {
+                            ...sanitizeHtml.defaults.allowedAttributes,
+                            'img': ['src', 'alt', 'class'],
+                            'code': ['class'],
+                            'span': ['class', 'style'],
+                            '*': ['style']
+                        }
+                    })
+                }} />
             </div>
 
             <hr className="my-12 border-white/10" />
 
-            <div className="bg-white/5 border border-white/10 rounded-xl p-8 text-center">
-                <h3 className="text-xl font-bold text-white mb-2">Enjoyed this article?</h3>
-                <p className="text-gray-400 mb-6">Subscribe to the newsletter to get the latest posts delivered to your inbox.</p>
-                <ButtonAsLink href="/contact" variant="default">Connect with me</ButtonAsLink>
-            </div>
+            <NewsletterForm />
         </article>
     );
 }
