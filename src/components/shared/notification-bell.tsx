@@ -177,6 +177,13 @@ export function NotificationBell() {
                         </div>
                     )}
                 </div>
+                <div className="p-2 border-t border-white/10 bg-white/5">
+                    <Link href="/notifications" onClick={() => setIsOpen(false)}>
+                        <Button variant="ghost" className="w-full h-8 text-xs text-white/60 hover:text-white hover:bg-white/10">
+                            View all notifications
+                        </Button>
+                    </Link>
+                </div>
             </PopoverContent>
         </Popover>
     );

@@ -28,7 +28,7 @@ export default function DashboardPage() {
         async function loadStats() {
             try {
                 // Parallel fetching for "Full Picture"
-                const [projects, tools, blogs, registrations, users] = await Promise.all([
+                const [projects, tools, blogs, registrations, usersData] = await Promise.all([
                     CMSService.getProjects(),
                     CMSService.getTools(),
                     CMSService.getPosts(false), // Fetch all posts (published & drafts)
@@ -36,6 +36,7 @@ export default function DashboardPage() {
                     CMSService.getUsers()
                 ]);
 
+                const users = usersData.users; // Extract users array from pagination result
                 const pendingRegs = registrations.filter(r => r.status === "pending");
                 const approvedRegs = registrations.filter(r => r.status === "approved");
 

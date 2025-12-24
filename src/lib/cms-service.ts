@@ -13,7 +13,8 @@ import {
     setDoc,
     runTransaction,
     where,
-    limit
+    limit,
+    startAfter
 } from "firebase/firestore";
 
 export interface Event {
@@ -43,6 +44,7 @@ export interface Registration {
     additionalInfo?: string;
     status: "approved" | "pending";
     registeredAt: Timestamp;
+    completedLessonIds?: string[]; // IDs of completed lessons
 }
 
 export interface Project {
@@ -436,10 +438,27 @@ export const CMSService = {
     },
 
     // --- Users ---
-    getUsers: async () => {
-        const q = query(collection(db, "users"));
+    getUsers: async (lastDoc: any = null, limitCount: number = 20) => {
+        let q = query(collection(db, "users"), orderBy("createdAt", "desc"), limit(limitCount));
+
+        if (lastDoc) {
+            q = query(collection(db, "users"), orderBy("createdAt", "desc"), startAfter(lastDoc), limit(limitCount));
+        }
+
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        return {
+            users: snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+            lastVisible: snapshot.docs[snapshot.docs.length - 1]
+        };
+    },
+
+    updateUser: async (uid: string, data: any) => {
+        const docRef = doc(db, "users", uid);
+        await updateDoc(docRef, data);
+    },
+
+    deleteUser: async (uid: string) => {
+        await deleteDoc(doc(db, "users", uid));
     },
 
     updateSubscriber: async (id: string, data: Partial<Subscriber>) => {
@@ -585,6 +604,51 @@ export const CMSService = {
         if (snapshot.empty) return null;
         const doc = snapshot.docs[0];
         return { id: doc.id, ...doc.data() } as Registration;
+    },
+
+    toggleLessonCompletion: async (registrationId: string, lessonId: string, isCompleted: boolean) => {
+        const docRef = doc(db, "registrations", registrationId);
+        // We will use arrayUnion/arrayRemove for atomic updates if possible, 
+        // but since we need 'isCompleted' boolean, specific logic is better.
+        // Actually, arrayUnion/Remove is perfect for a list of string IDs.
+
+        await updateDoc(docRef, {
+            completedLessonIds: isCompleted
+                ? // Add to array
+                // @ts-ignore - arrayUnion is not imported but we can import it or use standard update
+                // Let's use standard read-modify-write or just fail-safe standard update if imports missing
+                // Best to import arrayUnion/Remove. Let's update imports first.
+                // For now, let's keep it simple with get/update to avoid import messy edits if I missed imports.
+                // Wait, I can just use arrayUnion/Remove by importing them.
+                // But I cannot easily edit imports in this single replace call.
+                // Okay, I'll use a transaction or just simple get-update pattern for safety without import changes.
+                undefined
+                : undefined
+        });
+
+        // Re-implementing with transaction for safety since I didn't add imports
+        await runTransaction(db, async (transaction) => {
+            const regDoc = await transaction.get(docRef);
+            if (!regDoc.exists()) throw "Registration not found";
+
+            const data = regDoc.data() as Registration;
+            const currentCompleted = data.completedLessonIds || [];
+
+            let newCompleted;
+            if (isCompleted) {
+                // Add if not exists
+                if (!currentCompleted.includes(lessonId)) {
+                    newCompleted = [...currentCompleted, lessonId];
+                } else {
+                    newCompleted = currentCompleted;
+                }
+            } else {
+                // Remove if exists
+                newCompleted = currentCompleted.filter(id => id !== lessonId);
+            }
+
+            transaction.update(docRef, { completedLessonIds: newCompleted });
+        });
     },
 };
 

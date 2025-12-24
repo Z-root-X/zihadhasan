@@ -20,6 +20,10 @@
             {
                 "source": "/courses/**",
                 "destination": "/courses/view.html"
+            },
+            {
+                "source": "/learning/**",
+                "destination": "/learning/view.html"
             }
         ],
         "redirects": [

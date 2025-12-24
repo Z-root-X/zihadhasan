@@ -15,11 +15,16 @@ export function CourseTeaser() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        CMSService.getCourses().then((data) => {
-            // Filter published and take top 3
-            setCourses(data.filter(c => c.published).slice(0, 3));
-            setLoading(false);
-        });
+        CMSService.getPublishedCourses()
+            .then((data) => {
+                setCourses(data.slice(0, 3));
+            })
+            .catch((err) => {
+                console.error("Failed to load courses:", err);
+            })
+            .finally(() => {
+                setLoading(false);
+            });
     }, []);
 
     if (loading) {

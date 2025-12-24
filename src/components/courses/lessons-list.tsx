@@ -13,13 +13,15 @@ interface LessonsListProps {
     registration: Registration | null;
     className?: string;
     onEnroll?: () => void;
+    onToggleLesson?: (lessonId: string, completed: boolean) => void;
 }
 
-export function LessonsList({ course, registration, className, onEnroll }: LessonsListProps) {
+export function LessonsList({ course, registration, className, onEnroll, onToggleLesson }: LessonsListProps) {
     const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
     const [showLockedModal, setShowLockedModal] = useState(false);
 
     const isApproved = registration?.status === "approved";
+    const completedIds = registration?.completedLessonIds || [];
 
     const handleLessonClick = (lesson: Lesson) => {
         if (lesson.isFreePreview || isApproved) {
@@ -30,7 +32,7 @@ export function LessonsList({ course, registration, className, onEnroll }: Lesso
     };
 
     return (
-        <div className={cn("space-y-4", className)}>
+        <div id="lessons-list" className={cn("space-y-4", className)}>
             <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
                 <MonitorPlay className="h-6 w-6 text-primary" />
                 Course Content
@@ -40,35 +42,40 @@ export function LessonsList({ course, registration, className, onEnroll }: Lesso
                 {course.lessons && course.lessons.length > 0 ? (
                     course.lessons.map((lesson, index) => {
                         const isUnlocked = lesson.isFreePreview || isApproved;
+                        const isCompleted = completedIds.includes(lesson.id);
 
                         return (
                             <div
                                 key={lesson.id || index}
-                                onClick={() => handleLessonClick(lesson)}
                                 className={cn(
                                     "group flex items-center justify-between p-4 rounded-xl border transition-all duration-300",
                                     isUnlocked
-                                        ? "bg-white/5 border-white/10 hover:bg-white/10 cursor-pointer"
-                                        : "bg-black/20 border-white/5 opacity-70 cursor-not-allowed hover:border-primary/30"
+                                        ? "bg-white/5 border-white/10 hover:bg-white/10"
+                                        : "bg-black/20 border-white/5 opacity-70 hover:border-primary/30"
                                 )}
                             >
-                                <div className="flex items-center gap-4">
-                                    <div className={cn(
-                                        "h-10 w-10 rounded-full flex items-center justify-center shrink-0",
-                                        isUnlocked
-                                            ? "bg-primary/20 text-primary group-hover:bg-primary group-hover:text-white transition-colors"
-                                            : "bg-white/5 text-gray-500"
-                                    )}>
+                                <div className="flex items-center gap-4 flex-1">
+                                    {/* Play Button / Click Area */}
+                                    <div
+                                        className={cn(
+                                            "h-10 w-10 rounded-full flex items-center justify-center shrink-0 cursor-pointer",
+                                            isUnlocked
+                                                ? isCompleted ? "bg-green-500/20 text-green-500" : "bg-primary/20 text-primary group-hover:bg-primary group-hover:text-white transition-colors"
+                                                : "bg-white/5 text-gray-500"
+                                        )}
+                                        onClick={() => handleLessonClick(lesson)}
+                                    >
                                         {isUnlocked ? (
-                                            <PlayCircle className="h-5 w-5" />
+                                            isCompleted ? <CheckCircle className="h-5 w-5" /> : <PlayCircle className="h-5 w-5" />
                                         ) : (
                                             <Lock className="h-5 w-5" />
                                         )}
                                     </div>
-                                    <div>
+
+                                    <div className="flex-1 cursor-pointer" onClick={() => handleLessonClick(lesson)}>
                                         <h3 className={cn(
-                                            "font-medium text-lg",
-                                            isUnlocked ? "text-gray-200 group-hover:text-white" : "text-gray-500"
+                                            "font-medium text-lg transition-colors",
+                                            isCompleted ? "text-green-400 line-through decoration-green-500/50" : (isUnlocked ? "text-gray-200 group-hover:text-white" : "text-gray-500")
                                         )}>
                                             {index + 1}. {lesson.title}
                                         </h3>
@@ -83,11 +90,26 @@ export function LessonsList({ course, registration, className, onEnroll }: Lesso
                                     </div>
                                 </div>
 
-                                {isUnlocked && (
-                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <div className="px-3 py-1 rounded-full bg-white/10 text-xs font-medium text-white">
-                                            Play
-                                        </div>
+                                {isUnlocked && isApproved && (
+                                    <div className="flex items-center gap-2">
+                                        {/* Toggle Completion Button */}
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onToggleLesson?.(lesson.id, !isCompleted);
+                                            }}
+                                            className={cn(
+                                                "h-8 w-8 p-0 rounded-full",
+                                                isCompleted
+                                                    ? "text-green-500 hover:text-green-400 hover:bg-green-500/10"
+                                                    : "text-gray-500 hover:text-white hover:bg-white/10"
+                                            )}
+                                            title={isCompleted ? "Mark as incomplete" : "Mark as complete"}
+                                        >
+                                            <CheckCircle className={cn("h-5 w-5", isCompleted && "fill-current")} />
+                                        </Button>
                                     </div>
                                 )}
                             </div>
@@ -98,6 +120,7 @@ export function LessonsList({ course, registration, className, onEnroll }: Lesso
                         No lessons available yet.
                     </div>
                 )}
+
             </div>
 
             {/* Video Player Modal */}

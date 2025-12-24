@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useAuth, UserProfile } from "@/components/auth/auth-provider";
 import { CMSService, Registration, Course } from "@/lib/cms-service";
 import { Button } from "@/components/ui/button";
-import { Loader2, Users, BookOpen, CheckCircle, Clock } from "lucide-react";
+import { Loader2, Users, BookOpen, CheckCircle, Clock, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
 import { GlassCard } from "@/components/shared/glass-card";
 import { EnrollmentModal } from "@/components/courses/enrollment-modal";
@@ -189,6 +189,27 @@ function CourseDetailContent() {
                                         openAuthModal();
                                     }
                                 }}
+                                onToggleLesson={async (lessonId, isCompleted) => {
+                                    if (!registration) return;
+
+                                    // Optimistic update
+                                    const currentCompleted = registration.completedLessonIds || [];
+                                    const newCompleted = isCompleted
+                                        ? [...currentCompleted, lessonId]
+                                        : currentCompleted.filter(id => id !== lessonId);
+
+                                    setRegistration({ ...registration, completedLessonIds: newCompleted });
+
+                                    try {
+                                        await CMSService.toggleLessonCompletion(registration.id!, lessonId, isCompleted);
+                                        toast.success(isCompleted ? "Lesson completed!" : "Lesson marked as incomplete");
+                                    } catch (error) {
+                                        console.error("Failed to toggle completion", error);
+                                        // Revert on failure
+                                        setRegistration({ ...registration, completedLessonIds: currentCompleted });
+                                        toast.error("Failed to update progress");
+                                    }
+                                }}
                             />
                         </GlassCard>
                     </div>
@@ -200,43 +221,102 @@ function CourseDetailContent() {
                                 ৳{course.price}
                             </div>
 
+                            {/* --- UPDATED SIDEBAR SECTION FOR STUDENTS --- */}
                             {registration ? (
-                                <div className="w-full py-4 px-4 rounded-lg bg-green-500/10 border border-green-500/30 text-center">
+                                <div className="space-y-4">
                                     {registration.status === 'approved' ? (
-                                        <>
-                                            <CheckCircle className="h-6 w-6 text-green-400 mx-auto mb-2" />
-                                            <span className="font-bold text-green-400 block">Enrolled</span>
-                                            <p className="text-xs text-green-300/80 mt-1">You have full access</p>
-                                        </>
+                                        // 🟢 APPROVED: SHOW STUDENT DASHBOARD
+                                        <div className="rounded-xl bg-gradient-to-b from-green-500/10 to-emerald-500/5 border border-green-500/20 p-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <div className="h-10 w-10 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
+                                                    <CheckCircle className="h-5 w-5 text-green-400" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-bold text-white text-sm">Course Unlocked</h3>
+                                                    <p className="text-xs text-green-400">Welcome back, Student</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Dynamic Progress Bar */}
+                                            <div className="space-y-2 mb-6">
+                                                <div className="flex justify-between text-xs text-gray-400">
+                                                    <span>Progress</span>
+                                                    <span>{Math.round((registration.completedLessonIds?.length || 0) / (course.lessons?.length || 1) * 100)}%</span>
+                                                </div>
+                                                <div className="h-2 w-full bg-black/40 rounded-full overflow-hidden border border-white/5">
+                                                    <div
+                                                        className="h-full bg-green-500 transition-all duration-500 ease-out"
+                                                        style={{ width: `${((registration.completedLessonIds?.length || 0) / (course.lessons?.length || 1) * 100)}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Primary Action */}
+                                            <Button
+                                                className="w-full font-bold bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-900/20 transition-all active:scale-95"
+                                                onClick={() => {
+                                                    const lessonsElement = document.getElementById('lessons-list');
+                                                    lessonsElement?.scrollIntoView({ behavior: 'smooth' });
+                                                    toast.success("Select a lesson to start watching!");
+                                                }}
+                                            >
+                                                <PlayCircle className="mr-2 h-4 w-4" />
+                                                Start Learning
+                                            </Button>
+
+                                            {/* Secondary Actions */}
+                                            <div className="grid grid-cols-2 gap-2 mt-3">
+                                                <Button variant="outline" size="sm" className="border-white/10 hover:bg-white/5 text-gray-300 text-xs">
+                                                    Course Files
+                                                </Button>
+                                                <Button variant="outline" size="sm" className="border-white/10 hover:bg-white/5 text-gray-300 text-xs">
+                                                    Get Help
+                                                </Button>
+                                            </div>
+                                        </div>
                                     ) : (
-                                        <>
-                                            <Clock className="h-6 w-6 text-yellow-400 mx-auto mb-2" />
-                                            <span className="font-bold text-yellow-400 block">Pending Approval</span>
-                                            <p className="text-xs text-yellow-300/80 mt-1">Admin will verify soon</p>
-                                        </>
+                                        // 🟡 PENDING: SHOW STATUS
+                                        <div className="w-full py-6 px-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-center animate-pulse">
+                                            <div className="h-12 w-12 rounded-full bg-yellow-500/20 flex items-center justify-center mx-auto mb-3">
+                                                <Clock className="h-6 w-6 text-yellow-400" />
+                                            </div>
+                                            <h3 className="font-bold text-yellow-400 mb-1">Verification Pending</h3>
+                                            <p className="text-xs text-yellow-200/70 mb-4 px-2">
+                                                We are verifying your payment. This usually takes 30-60 minutes.
+                                            </p>
+                                            <div className="text-xs text-muted-foreground bg-black/20 py-2 rounded">
+                                                TrxID: <span className="font-mono text-yellow-500">{registration.trxId || "N/A"}</span>
+                                            </div>
+                                        </div>
                                     )}
                                 </div>
                             ) : (
-                                <Button
-                                    size="lg"
-                                    className="w-full text-lg font-bold"
-                                    onClick={() => {
-                                        if (user) {
-                                            setShowEnrollModal(true);
-                                        } else {
-                                            openAuthModal();
-                                        }
-                                    }}
-                                    disabled={regLoading}
-                                >
-                                    {regLoading ? (
-                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                    ) : !user ? (
-                                        "Login to Enroll"
-                                    ) : (
-                                        "Enroll Now"
-                                    )}
-                                </Button>
+                                // 🔵 NOT ENROLLED: SHOW BUY BUTTON
+                                <div className="space-y-4">
+                                    <Button
+                                        size="lg"
+                                        className="w-full text-lg font-bold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25"
+                                        onClick={() => {
+                                            if (user) {
+                                                setShowEnrollModal(true);
+                                            } else {
+                                                openAuthModal();
+                                            }
+                                        }}
+                                        disabled={regLoading}
+                                    >
+                                        {regLoading ? (
+                                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                        ) : !user ? (
+                                            "Login to Enroll"
+                                        ) : (
+                                            "Enroll Now"
+                                        )}
+                                    </Button>
+                                    <p className="text-xs text-center text-muted-foreground">
+                                        30-Day Money-Back Guarantee • Lifetime Access
+                                    </p>
+                                </div>
                             )}
 
                             {course && (

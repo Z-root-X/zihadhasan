@@ -53,7 +53,8 @@ export default function MyLearningPage() {
                         return {
                             id: doc.id,
                             ...courseData,
-                            registrationStatus: regMap.get(doc.id)?.status || 'pending'
+                            registrationStatus: regMap.get(doc.id)?.status || 'pending',
+                            completedLessonIds: regMap.get(doc.id)?.completedLessonIds || []
                         };
                     });
                     setCourses(coursesData);
@@ -141,6 +142,23 @@ export default function MyLearningPage() {
                                             <p className="text-white/50 text-sm line-clamp-2 mb-4 flex-1">
                                                 {course.description}
                                             </p>
+
+                                            {!isLocked && (
+                                                <div className="mb-4 space-y-1">
+                                                    <div className="flex justify-between text-xs text-white/60">
+                                                        <span>Progress</span>
+                                                        <span>{Math.round((course.completedLessonIds?.length || 0) / (course.lessons?.length || 1) * 100)}%</span>
+                                                    </div>
+                                                    <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                                        <div
+                                                            className="h-full bg-primary transition-all duration-500 ease-out"
+                                                            style={{ width: `${Math.round((course.completedLessonIds?.length || 0) / (course.lessons?.length || 1) * 100)}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+
+
                                             <div className="mt-auto pt-4 border-t border-white/10 flex items-center justify-between text-xs text-white/40">
                                                 <span>{course.lessons?.length || 0} Lessons</span>
                                                 <span className={isLocked ? "text-amber-500 font-medium" : "text-green-400 font-medium"}>
