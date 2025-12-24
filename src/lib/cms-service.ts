@@ -125,6 +125,8 @@ export interface GlobalSettings {
     siteTitle?: string;
     siteDescription?: string;
     seoKeywords?: string[];
+    siteLogo?: string;
+    siteFavicon?: string;
 
     // Pages Content Control
     pages?: {
@@ -431,6 +433,13 @@ export const CMSService = {
         const q = query(collection(db, "subscribers"), orderBy("joinedAt", "desc"));
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Subscriber));
+    },
+
+    // --- Users ---
+    getUsers: async () => {
+        const q = query(collection(db, "users"));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     },
 
     updateSubscriber: async (id: string, data: Partial<Subscriber>) => {

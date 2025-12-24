@@ -19,6 +19,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { ImageUploader } from "@/components/admin/image-uploader";
 // Native select used for simplicity
 // import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -145,12 +146,10 @@ export function ToolForm({ open, onOpenChange, onSubmit, initialData }: ToolForm
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="imageUrl" className="text-white">Logo/Icon URL (Optional)</Label>
-                        <Input
-                            id="imageUrl"
-                            {...form.register("imageUrl")}
-                            placeholder="https://..."
-                            className="bg-white/5 border-white/10 text-white focus:border-primary/50"
+                        <ImageUploader
+                            label="Logo/Icon"
+                            value={form.watch("imageUrl") || ""}
+                            onChange={(url) => form.setValue("imageUrl", url)}
                         />
                     </div>
 

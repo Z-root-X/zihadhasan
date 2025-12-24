@@ -215,19 +215,45 @@ export default function RegistrationsPage() {
             </div>
 
             {/* Filters */}
-            <div className="grid gap-4 md:grid-cols-4">
-                <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search TrxID, Name..."
-                        className="pl-8 bg-white/5 border-white/10 text-white"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+            <div className="flex flex-col md:flex-row gap-6">
+                <div className="flex-1 bg-white/5 p-1 rounded-lg border border-white/10 flex">
+                    <button
+                        onClick={() => setSelectedStatus("all")}
+                        className={`flex-1 text-sm font-medium py-2 rounded-md transition-all ${selectedStatus === 'all' ? 'bg-white/10 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                    >
+                        All
+                    </button>
+                    <button
+                        onClick={() => setSelectedStatus("pending")}
+                        className={`flex-1 text-sm font-medium py-2 rounded-md transition-all ${selectedStatus === 'pending' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/20 shadow-sm' : 'text-gray-400 hover:text-amber-400'}`}
+                    >
+                        Pending
+                    </button>
+                    <button
+                        onClick={() => setSelectedStatus("approved")}
+                        className={`flex-1 text-sm font-medium py-2 rounded-md transition-all ${selectedStatus === 'approved' ? 'bg-green-500/20 text-green-400 border border-green-500/20 shadow-sm' : 'text-gray-400 hover:text-green-400'}`}
+                    >
+                        Approved
+                    </button>
                 </div>
 
+                <div className="flex gap-4 flex-1">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search TrxID, Name..."
+                            className="pl-9 bg-white/5 border-white/10 text-white"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex items-center justify-between text-sm text-gray-400 px-1">
+                <span>Showing {filteredRegistrations.length} records</span>
                 <Select value={selectedEntity} onValueChange={setSelectedEntity}>
-                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                    <SelectTrigger className="w-[200px] bg-white/5 border-white/10 text-white h-8 text-xs">
                         <SelectValue placeholder="Filter by Item" />
                     </SelectTrigger>
                     <SelectContent>
@@ -250,21 +276,6 @@ export default function RegistrationsPage() {
                         )}
                     </SelectContent>
                 </Select>
-
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                        <SelectValue placeholder="Filter by Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="approved">Approved</SelectItem>
-                    </SelectContent>
-                </Select>
-
-                <div className="flex items-center text-sm text-gray-400">
-                    Showing {filteredRegistrations.length} records
-                </div>
             </div>
 
             <GlassCard className="overflow-hidden">

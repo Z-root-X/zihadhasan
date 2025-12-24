@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Github, Twitter, Linkedin, Mail, Youtube, Facebook, Instagram } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CMSService, SocialLink as SocialLinkType } from "@/lib/cms-service";
 import { NewsletterForm } from "@/components/shared/newsletter-form";
 
 export function Footer() {
+    const pathname = usePathname();
     const [socials, setSocials] = useState<SocialLinkType[]>([]);
 
     useEffect(() => {
@@ -66,10 +68,12 @@ export function Footer() {
                     </p>
                 </div>
 
-                {/* Newsletter */}
-                <div className="flex flex-col lg:items-end">
-                    <NewsletterForm />
-                </div>
+                {/* Newsletter - Hidden on Home Page to avoid redundancy with the dedicated section */}
+                {pathname !== "/" && (
+                    <div className="flex flex-col lg:items-end">
+                        <NewsletterForm />
+                    </div>
+                )}
             </div>
         </footer>
     );

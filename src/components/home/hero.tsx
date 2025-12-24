@@ -12,6 +12,22 @@ import { useEffect, useState } from "react";
 
 export function Hero() {
     const [settings, setSettings] = useState<any>(null);
+    const [stats, setStats] = useState({ projects: 0, tools: 0, students: 500 }); // Default students base
+
+    useEffect(() => {
+        Promise.all([
+            CMSService.getGlobalSettings(),
+            CMSService.getProjects(),
+            CMSService.getTools()
+        ]).then(([settingsData, projectsData, toolsData]) => {
+            setSettings(settingsData);
+            setStats({
+                projects: projectsData.length,
+                tools: toolsData.length,
+                students: 500 + Math.floor(Math.random() * 100) // Mock dynamic student count > 500
+            });
+        });
+    }, []);
 
     // 3D Tilt Logic
     const x = useMotionValue(0);
@@ -40,9 +56,10 @@ export function Hero() {
         y.set(0);
     };
 
-    useEffect(() => {
-        CMSService.getGlobalSettings().then(setSettings);
-    }, []);
+    // Fetched in top-level useEffect now
+    // useEffect(() => {
+    //     CMSService.getGlobalSettings().then(setSettings);
+    // }, []);
 
     const heroTitle = settings?.heroTitle || (
         <>
@@ -76,6 +93,10 @@ export function Hero() {
                     background: `radial-gradient(1000px circle at ${mouseX.get() * 1000 + 500}px ${mouseY.get() * 1000 + 500}px, rgba(139, 92, 246, 0.1), transparent 40%)`
                 }}
             />
+
+            {/* Aurora Background Blobs */}
+            <div className="absolute top-[-20%] right-[-10%] h-[500px] w-[500px] rounded-full bg-blue-600/20 blur-[120px] mix-blend-screen animate-pulse pointer-events-none" />
+            <div className="absolute bottom-[-20%] left-[-10%] h-[500px] w-[500px] rounded-full bg-purple-600/20 blur-[120px] mix-blend-screen animate-pulse pointer-events-none" style={{ animationDelay: "2s" }} />
 
             <div className="container mx-auto grid gap-16 lg:grid-cols-12 lg:items-center relative z-10">
                 {/* Text Content - Immersive Typography */}
@@ -140,9 +161,26 @@ export function Hero() {
                             </Button>
                         </MagneticButton>
                     </motion.div>
+
+                    {/* Floating Stats Bar */}
+                    <motion.div
+                        variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+                        className="mt-12 flex flex-wrap items-center justify-center lg:justify-start gap-8 border-t border-white/10 pt-8"
+                    >
+                        {[
+                            { label: "Projects Built", value: `${stats.projects}+` },
+                            { label: "Students", value: `${stats.students}+` },
+                            { label: "AI Tools", value: `${stats.tools}+` }
+                        ].map((stat, i) => (
+                            <div key={i} className="flex flex-col">
+                                <span className="text-2xl font-bold text-white">{stat.value}</span>
+                                <span className="text-sm text-neutral-500 uppercase tracking-wider">{stat.label}</span>
+                            </div>
+                        ))}
+                    </motion.div>
                 </motion.div>
 
-                {/* 3D Visual Content - Noir Style */}
+                {/* 3D Visual Content - Noir Style with Cinematic Fade */}
                 <motion.div
                     initial={{ opacity: 0, filter: "blur(20px)" }}
                     animate={{ opacity: 1, filter: "blur(0px)" }}
@@ -163,10 +201,14 @@ export function Hero() {
                         {/* Card Reflection/Texture */}
                         <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none rounded-[2rem] mix-blend-overlay" />
 
-                        {/* Main Image Container */}
+                        {/* Main Image Container with FADE TO BLACK MASK */}
                         <div
-                            className="relative h-full w-full overflow-hidden rounded-[2rem] border border-white/10 bg-neutral-900 shadow-2xl transition-all duration-500 group-hover:shadow-[0_0_100px_-20px_rgba(255,255,255,0.1)]"
-                            style={{ transform: "translateZ(20px)" }}
+                            className="relative h-full w-full overflow-hidden rounded-[2rem] bg-neutral-900 shadow-2xl transition-all duration-500 group-hover:shadow-[0_0_100px_-20px_rgba(255,255,255,0.1)]"
+                            style={{
+                                transform: "translateZ(20px)",
+                                maskImage: "linear-gradient(to bottom, black 80%, transparent 100%)",
+                                WebkitMaskImage: "linear-gradient(to bottom, black 60%, transparent 100%)"
+                            }}
                         >
                             {/* Noir Filter: Active by default, fades out on hover to reveal true colors */}
                             <div className="absolute inset-0 bg-neutral-950/20 z-10 mix-blend-multiply transition-opacity duration-500 group-hover:opacity-0" />

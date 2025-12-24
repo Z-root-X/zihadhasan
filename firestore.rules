@@ -81,8 +81,20 @@ service cloud.firestore {
       // Allow read if Admin OR if the user owns the registration
       allow read: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
       
-      // Allow update if Admin
+      // Allow update, delete: if Admin
       allow update, delete: if isAdmin();
+    }
+    
+    // --- Contact Messages ---
+    match /messages/{messageId} {
+      allow create: if true; // Public contact form
+      allow read, delete: if isAdmin();
+    }
+    
+    // --- User Notifications (Subcollection) ---
+    match /users/{userId}/notifications/{notificationId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isAdmin(); // Only system/admin should write, or Cloud Functions
     }
 
     // --- Default Deny ---
