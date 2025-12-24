@@ -72,6 +72,15 @@ function CoursePlayerContent() {
                     return;
                 }
 
+                // Filter out lessons without IDs to prevent errors
+                if (courseData.lessons) {
+                    const validLessons = courseData.lessons.filter(l => l.id);
+                    if (validLessons.length !== courseData.lessons.length) {
+                        console.warn("Filtered out lessons without IDs:", courseData.lessons.length - validLessons.length);
+                    }
+                    courseData.lessons = validLessons;
+                }
+
                 setCourse(courseData);
 
                 // Set initial active lesson (first uncompleted or first overall)
@@ -103,7 +112,10 @@ function CoursePlayerContent() {
     }, [user, authLoading, courseId, router]);
 
     const handleLessonComplete = async (lessonId: string) => {
-        if (!registration?.id) return;
+        if (!registration?.id || !lessonId) {
+            console.error("Invalid registration or lesson ID", { registrationId: registration?.id, lessonId });
+            return;
+        }
 
         const isCompleted = completedLessonIds.includes(lessonId);
         const newStatus = !isCompleted; // Toggle

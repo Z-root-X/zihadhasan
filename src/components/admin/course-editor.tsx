@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export interface Lesson {
+    id: string;
     title: string;
     videoUrl: string;
     order: number;
@@ -52,7 +53,14 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
     const [price, setPrice] = useState(course?.price || 0);
     const [headerImage, setHeaderImage] = useState(course?.headerImage || "");
     const [published, setPublished] = useState(course?.published || false);
-    const [lessons, setLessons] = useState<Lesson[]>(course?.lessons || []);
+    const [lessons, setLessons] = useState<Lesson[]>(() => {
+        const initial = course?.lessons || [];
+        // Backfill IDs if missing
+        return initial.map(l => ({
+            ...l,
+            id: l.id || crypto.randomUUID()
+        }));
+    });
 
     // Draft State
     const [showDraftDialog, setShowDraftDialog] = useState(false);
@@ -119,7 +127,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
     const handleAddLesson = () => {
         setLessons([
             ...lessons,
-            { title: "", videoUrl: "", order: lessons.length + 1 }
+            { id: crypto.randomUUID(), title: "", videoUrl: "", order: lessons.length + 1 }
         ]);
     };
 

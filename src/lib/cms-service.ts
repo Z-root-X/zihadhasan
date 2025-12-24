@@ -659,25 +659,7 @@ export const CMSService = {
 
     toggleLessonCompletion: async (registrationId: string, lessonId: string, isCompleted: boolean) => {
         const docRef = doc(db, "registrations", registrationId);
-        // We will use arrayUnion/arrayRemove for atomic updates if possible, 
-        // but since we need 'isCompleted' boolean, specific logic is better.
-        // Actually, arrayUnion/Remove is perfect for a list of string IDs.
-
-        await updateDoc(docRef, {
-            completedLessonIds: isCompleted
-                ? // Add to array
-                // @ts-ignore - arrayUnion is not imported but we can import it or use standard update
-                // Let's use standard read-modify-write or just fail-safe standard update if imports missing
-                // Best to import arrayUnion/Remove. Let's update imports first.
-                // For now, let's keep it simple with get/update to avoid import messy edits if I missed imports.
-                // Wait, I can just use arrayUnion/Remove by importing them.
-                // But I cannot easily edit imports in this single replace call.
-                // Okay, I'll use a transaction or just simple get-update pattern for safety without import changes.
-                undefined
-                : undefined
-        });
-
-        // Re-implementing with transaction for safety since I didn't add imports
+        // Re-implementing with transaction for safety
         await runTransaction(db, async (transaction) => {
             const regDoc = await transaction.get(docRef);
             if (!regDoc.exists()) throw "Registration not found";
