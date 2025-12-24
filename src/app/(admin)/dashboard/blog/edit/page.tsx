@@ -63,7 +63,7 @@ function EditBlogPostContent() {
                 <h2 className="text-3xl font-bold tracking-tight text-white">Edit Post</h2>
                 <p className="text-muted-foreground">Make changes to your article.</p>
             </div>
-            <BlogEditor initialData={post} />
+            <BlogEditor initialData={post} localStorageKey={`blog_draft_${post.id}`} />
         </div>
     );
 }

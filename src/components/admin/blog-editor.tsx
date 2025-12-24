@@ -29,9 +29,10 @@ import {
 
 interface BlogEditorProps {
     initialData?: BlogPost;
+    localStorageKey?: string;
 }
 
-export function BlogEditor({ initialData }: BlogEditorProps) {
+export function BlogEditor({ initialData, localStorageKey = 'blog_draft_new' }: BlogEditorProps) {
     const router = useRouter();
     const [title, setTitle] = useState(initialData?.title || "");
     const [slug, setSlug] = useState(initialData?.slug || "");
@@ -84,17 +85,17 @@ export function BlogEditor({ initialData }: BlogEditorProps) {
                 tags,
                 savedAt: Date.now()
             };
-            localStorage.setItem('blog_draft_new', JSON.stringify(draftData));
+            localStorage.setItem(localStorageKey, JSON.stringify(draftData));
         };
 
         const interval = setInterval(saveDraft, 15000); // Save every 15s
         return () => clearInterval(interval);
-    }, [title, slug, excerpt, editor, coverImage, tags, initialData]);
+    }, [title, slug, excerpt, editor, coverImage, tags, initialData, localStorageKey]);
 
     // Check for Draft on Mount
     useEffect(() => {
         if (!initialData) {
-            const savedDraft = localStorage.getItem('blog_draft_new');
+            const savedDraft = localStorage.getItem(localStorageKey);
             if (savedDraft) {
                 try {
                     const parsed = JSON.parse(savedDraft);
@@ -106,7 +107,7 @@ export function BlogEditor({ initialData }: BlogEditorProps) {
                 }
             }
         }
-    }, [initialData]);
+    }, [initialData, localStorageKey]);
 
     const handleRestoreDraft = () => {
         if (draftToRestore) {
@@ -122,7 +123,7 @@ export function BlogEditor({ initialData }: BlogEditorProps) {
     };
 
     const handleDiscardDraft = () => {
-        localStorage.removeItem('blog_draft_new');
+        localStorage.removeItem(localStorageKey);
         setShowDraftDialog(false);
         toast.info("Draft Discarded");
     };
@@ -154,7 +155,7 @@ export function BlogEditor({ initialData }: BlogEditorProps) {
                 // For now, simple create.
                 await CMSService.createPost(postData);
             }
-            if (!initialData) localStorage.removeItem('blog_draft_new'); // Clear draft on success
+            if (!initialData) localStorage.removeItem(localStorageKey); // Clear draft on success
             router.push('/dashboard/blog');
             router.refresh();
         } catch (error) {

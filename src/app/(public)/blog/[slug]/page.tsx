@@ -41,6 +41,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             description: post.excerpt,
             images: post.coverImage ? [post.coverImage] : [],
         },
+        other: {
+            "readingTime": post.readingTime ? `${post.readingTime} min read` : "5 min read"
+        }
     };
 }
 

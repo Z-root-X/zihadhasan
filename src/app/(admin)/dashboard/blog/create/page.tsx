@@ -10,7 +10,7 @@ export default function CreateBlogPostPage() {
                 <p className="text-muted-foreground">Share your thoughts with the world.</p>
             </div>
 
-            <BlogEditor />
+            <BlogEditor localStorageKey="blog_draft_new_v1" />
         </div>
     );
 }
