@@ -6,7 +6,7 @@ import { NewsletterForm } from "@/components/shared/newsletter-form";
 import { Github, Twitter, Linkedin, Mail } from "lucide-react";
 import Link from "next/link";
 import { CMSService } from "@/lib/cms-service";
-import { BlogService } from "@/lib/blog-service";
+
 import { Section } from "./components/section"; // Helper component
 
 // Cache-First Strategy: Revalidate every hour
@@ -15,11 +15,11 @@ export const revalidate = 3600;
 export default async function Home() {
   // Parallel Data Fetching
   const [settings, projects, tools, courses, blogPosts] = await Promise.all([
-    CMSService.getGlobalSettings(),
-    CMSService.getProjects(),
-    CMSService.getTools(),
-    CMSService.getPublishedCourses(),
-    BlogService.getPublishedPosts(),
+    CMSService.getGlobalSettings().catch(e => { console.warn("Settings fetch failed", e); return null; }),
+    CMSService.getProjects().catch(e => { console.warn("Projects fetch failed", e); return []; }),
+    CMSService.getTools().catch(e => { console.warn("Tools fetch failed", e); return []; }),
+    CMSService.getPublishedCourses().catch(e => { console.warn("Courses fetch failed", e); return []; }),
+    CMSService.getPosts(true).catch(e => { console.warn("Posts fetch failed", e); return []; }),
   ]);
 
   const featuredProject = projects.length > 0 ? projects[0] : null;

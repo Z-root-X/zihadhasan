@@ -3,9 +3,7 @@ import { BlogPostRenderer } from "@/components/blog/blog-post-renderer";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 
-// Force static generation for known paths, fallback for new ones
-export const dynamic = 'force-static';
-export const revalidate = 3600; // Revalidate every hour
+
 
 interface Props {
     params: Promise<{ slug: string }>;
@@ -13,10 +11,15 @@ interface Props {
 
 // 1. Generate Static Params at Build Time
 export async function generateStaticParams() {
-    const posts = await CMSService.getPosts(true); // Published only
-    return posts.map((post) => ({
-        slug: post.slug,
-    }));
+    try {
+        const posts = await CMSService.getPosts(true); // Published only
+        return posts.map((post) => ({
+            slug: post.slug,
+        }));
+    } catch (error) {
+        console.warn("Failed to generate static params for blog posts (likely missing index):", error);
+        return [];
+    }
 }
 
 // 2. Generate SEO Metadata

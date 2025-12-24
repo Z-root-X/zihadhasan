@@ -52,7 +52,7 @@ export function SearchCommand() {
             ]).then(([courses, projects, posts, events]) => {
                 const standardized: SearchResult[] = [
                     ...courses.map((c: Course) => ({
-                        id: c.id!, type: 'course' as const, title: c.title, description: c.description, url: `/courses/view/${c.id}`
+                        id: c.id!, type: 'course' as const, title: c.title, description: c.description, url: `/courses/view?id=${c.id}`
                     })),
                     ...projects.map((p: Project) => ({
                         id: p.id!, type: 'project' as const, title: p.title, description: p.description, url: p.liveLink || p.githubLink || '/projects' // fallback

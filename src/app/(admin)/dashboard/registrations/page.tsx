@@ -42,6 +42,8 @@ export default function RegistrationsPage() {
         if (!viewingProof) setZoom(1);
     }, [viewingProof]);
     const [deletingRegistrationId, setDeletingRegistrationId] = useState<string | null>(null);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [isBulkProcessing, setIsBulkProcessing] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -128,6 +130,54 @@ export default function RegistrationsPage() {
         }
     };
 
+    const toggleSelection = (id: string) => {
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        );
+    };
+
+    const toggleAll = () => {
+        if (selectedIds.length === filteredRegistrations.length) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(filteredRegistrations.map(r => r.id).filter(Boolean) as string[]);
+        }
+    };
+
+    const handleBulkApprove = async () => {
+        if (selectedIds.length === 0) return;
+        setIsBulkProcessing(true);
+        try {
+            await CMSService.bulkApproveRegistrations(selectedIds);
+            setRegistrations(prev => prev.map(r => selectedIds.includes(r.id!) ? { ...r, status: "approved" } : r));
+            toast.success(`Approved ${selectedIds.length} registrations`);
+            setSelectedIds([]);
+        } catch (error) {
+            console.error(error);
+            toast.error("Bulk approve failed");
+        } finally {
+            setIsBulkProcessing(false);
+        }
+    };
+
+    const handleBulkReject = async () => {
+        if (selectedIds.length === 0) return;
+        if (!confirm(`Are you sure you want to reject/delete ${selectedIds.length} registrations?`)) return;
+
+        setIsBulkProcessing(true);
+        try {
+            await CMSService.bulkRejectRegistrations(selectedIds);
+            setRegistrations(prev => prev.filter(r => !selectedIds.includes(r.id!)));
+            toast.success(`Rejected ${selectedIds.length} registrations`);
+            setSelectedIds([]);
+        } catch (error) {
+            console.error(error);
+            toast.error("Bulk reject failed");
+        } finally {
+            setIsBulkProcessing(false);
+        }
+    };
+
     const getEntityName = (reg: Registration) => {
         if (reg.eventId) return events.find(e => e.id === reg.eventId)?.title || "Unknown Event";
         if (reg.courseId) return courses.find(c => c.id === reg.courseId)?.title || "Unknown Course";
@@ -209,9 +259,32 @@ export default function RegistrationsPage() {
                     <h2 className="text-3xl font-bold tracking-tight text-white">Registrations</h2>
                     <p className="text-muted-foreground">Manage enrollments for events and courses.</p>
                 </div>
-                <Button onClick={handleExport} variant="outline" className="border-green-500/20 text-green-400 hover:bg-green-500/10">
-                    <Download className="mr-2 h-4 w-4" /> Export CSV
-                </Button>
+                <div className="flex items-center gap-2">
+                    {selectedIds.length > 0 && (
+                        <>
+                            <Button
+                                variant="outline"
+                                className="border-green-500/20 text-green-400 hover:bg-green-500/10"
+                                onClick={handleBulkApprove}
+                                disabled={isBulkProcessing}
+                            >
+                                {isBulkProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                                Approve ({selectedIds.length})
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={handleBulkReject}
+                                disabled={isBulkProcessing}
+                            >
+                                {isBulkProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                Reject ({selectedIds.length})
+                            </Button>
+                        </>
+                    )}
+                    <Button onClick={handleExport} variant="outline" className="border-white/10 text-white hover:bg-white/10">
+                        <Download className="mr-2 h-4 w-4" /> Export CSV
+                    </Button>
+                </div>
             </div>
 
             {/* Filters */}
@@ -282,6 +355,14 @@ export default function RegistrationsPage() {
                 <Table>
                     <TableHeader className="bg-white/5">
                         <TableRow className="border-white/10 hover:bg-white/5">
+                            <TableHead className="w-[50px]">
+                                <input
+                                    type="checkbox"
+                                    checked={selectedIds.length === filteredRegistrations.length && filteredRegistrations.length > 0}
+                                    onChange={toggleAll}
+                                    className="rounded border-gray-500 bg-black/50 text-primary focus:ring-primary cursor-pointer accent-primary"
+                                />
+                            </TableHead>
                             <TableHead className="text-gray-300">User</TableHead>
                             <TableHead className="text-gray-300">Event / Course</TableHead>
                             <TableHead className="text-gray-300">Verification Info</TableHead>
@@ -292,7 +373,7 @@ export default function RegistrationsPage() {
                     <TableBody>
                         {filteredRegistrations.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center h-24 text-gray-400">
+                                <TableCell colSpan={6} className="text-center h-24 text-gray-400">
                                     No registrations found.
                                 </TableCell>
                             </TableRow>
@@ -302,6 +383,14 @@ export default function RegistrationsPage() {
                                 const isCourse = !!reg.courseId;
                                 return (
                                     <TableRow key={reg.id} className="border-white/10 hover:bg-white/5">
+                                        <TableCell>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.includes(reg.id!)}
+                                                onChange={() => toggleSelection(reg.id!)}
+                                                className="rounded border-gray-500 bg-black/50 text-primary focus:ring-primary cursor-pointer accent-primary"
+                                            />
+                                        </TableCell>
                                         <TableCell className="font-medium text-white">
                                             <div>{reg.name}</div>
                                             <div className="text-xs text-gray-500">{reg.email}</div>

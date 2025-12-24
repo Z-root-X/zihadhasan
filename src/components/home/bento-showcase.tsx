@@ -1,8 +1,7 @@
 "use client";
 
 import { BentoGrid, BentoGridItem } from "@/components/shared/bento-grid";
-import { Project, Tool } from "@/lib/cms-service";
-import { BlogPost } from "@/lib/blog-service";
+import { Project, Tool, BlogPost } from "@/lib/cms-service";
 import { SpotlightCard } from "@/components/ui/spotlight-card";
 import { Github, ArrowUpRight, Cpu, Quote } from "lucide-react";
 import Link from "next/link";

@@ -187,7 +187,7 @@ export const CMSService = {
         const snapshot = await getDocs(q);
         return snapshot.docs
             .map(doc => ({ id: doc.id, ...doc.data() } as Project))
-            .filter(p => !p.isDeleted); // In-memory filtering (Cost: reads deleted docs, Benefit: No Index needed)
+            .filter(p => !p.isDeleted);
     },
 
     deleteProject: async (id: string) => {
@@ -439,6 +439,20 @@ export const CMSService = {
         await updateDoc(docRef, data);
     },
 
+    bulkApproveRegistrations: async (ids: string[]) => {
+        // Process sequentially to reuse complex transactional logic (validations, seat counts, notifications)
+        const results = [];
+        for (const id of ids) {
+            results.push(await CMSService.approveRegistration(id));
+        }
+        return results;
+    },
+
+    bulkRejectRegistrations: async (ids: string[]) => {
+        const promises = ids.map(id => deleteDoc(doc(db, "registrations", id)));
+        await Promise.all(promises);
+    },
+
     getRegistrations: async (eventId?: string) => {
         // If eventId provided, filter by it. Else get all (for Dashboard).
         let q;
@@ -509,11 +523,6 @@ export const CMSService = {
 
     // --- Blog ---
     getPosts: async (publishedOnly = true) => {
-        // Simple query to avoid Index requirements if possible, but 'where' needs index with orderBy usually.
-        // If "isDeleted" is boolean, Firestore might allow it without composite index if order is default?
-        // Actually, where("isDeleted", "!=", true) usually requires index with orderBy.
-        // Let's rely on Firestore building index links in console if needed.
-        // In-memory filtering to handle legacy docs (missing isDeleted field) and avoid composite index
         const q = query(
             collection(db, "posts"),
             orderBy("createdAt", "desc")
@@ -571,23 +580,22 @@ export const CMSService = {
 
     // --- Courses ---
     getCourses: async () => {
-        // Get all courses (Admin) - Filter deleted in memory
-        const q = query(collection(db, "courses"));
+        // Get all courses (Admin) - Filter deleted server-side
+        const q = query(collection(db, "courses"), where("isDeleted", "==", false));
         const snapshot = await getDocs(q);
         return snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() } as Course))
-            .filter(c => !c.isDeleted);
+            .map(doc => ({ id: doc.id, ...doc.data() } as Course));
     },
 
     getPublishedCourses: async () => {
         const q = query(
             collection(db, "courses"),
-            where("published", "==", true)
+            where("published", "==", true),
+            where("isDeleted", "==", false)
         );
         const snapshot = await getDocs(q);
         return snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() } as Course))
-            .filter(c => !c.isDeleted);
+            .map(doc => ({ id: doc.id, ...doc.data() } as Course));
     },
 
     getCourse: async (id: string) => {
@@ -700,5 +708,6 @@ export interface BlogPost {
         name: string;
         avatar?: string;
     };
+    readingTime?: number;
     isDeleted?: boolean;
 }

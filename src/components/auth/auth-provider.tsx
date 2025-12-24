@@ -77,11 +77,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                         setUser(null);
                         setProfile(null);
                         setLoading(false);
+                        // Clear cookie
+                        document.cookie = "auth_role=; path=/; max-age=0";
                         return;
                     }
 
                     setProfile(data);
                     setUser(currentUser);
+                    // Set cookie for Middleware
+                    const role = data.role || "user";
+                    document.cookie = `auth_role=${role}; path=/; max-age=86400; SameSite=Strict`;
                 } else {
                     // Create Profile if it doesn't exist (e.g. first Google Login)
                     const newProfile: UserProfile = {
@@ -99,10 +104,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     await setDoc(docRef, newProfile);
                     setProfile(newProfile);
                     setUser(currentUser);
+
+                    // Set cookie (Default user)
+                    document.cookie = `auth_role=user; path=/; max-age=86400; SameSite=Strict`;
                 }
             } else {
                 setUser(null);
                 setProfile(null);
+                // Clear cookie
+                document.cookie = "auth_role=; path=/; max-age=0";
             }
 
             setLoading(false);
@@ -113,6 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const logout = async () => {
         await firebaseSignOut(auth);
+        document.cookie = "auth_role=; path=/; max-age=0";
     };
 
     // Derived state

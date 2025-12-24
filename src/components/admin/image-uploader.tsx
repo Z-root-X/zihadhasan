@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, X, Loader2, Image as ImageIcon, Link as LinkIcon } from "lucide-react";
+import imageCompression from 'browser-image-compression';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,8 +35,25 @@ export function ImageUploader({ value, onChange, className, label = "Upload Imag
         }
 
         setUploading(true);
+
+        // Compress Image
+        let fileToUpload = file;
+        try {
+            const options = {
+                maxSizeMB: 1,
+                maxWidthOrHeight: 1920,
+                // usage: true // optional, for detailed logging
+                useWebWorker: true
+            };
+            const compressedFile = await imageCompression(file, options);
+            fileToUpload = compressedFile;
+            // console.log(`Compressed from ${file.size / 1024 / 1024}MB to ${compressedFile.size / 1024 / 1024}MB`);
+        } catch (error) {
+            console.warn("Image compression failed, uploading original.", error);
+        }
+
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", fileToUpload);
         formData.append("upload_preset", uploadPreset);
 
         try {
