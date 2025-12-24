@@ -1,31 +1,39 @@
-"use client";
-
 import { Hero } from "@/components/home/hero";
 import { TechMarquee } from "@/components/home/tech-marquee";
 import { BentoShowcase } from "@/components/home/bento-showcase";
 import { CourseTeaser } from "@/components/home/course-teaser";
 import { NewsletterForm } from "@/components/shared/newsletter-form";
-import { motion } from "framer-motion";
 import { Github, Twitter, Linkedin, Mail } from "lucide-react";
 import Link from "next/link";
+import { CMSService } from "@/lib/cms-service";
+import { BlogService } from "@/lib/blog-service";
+import { Section } from "./components/section"; // Helper component
 
-const Section = ({ children, className }: { children: React.ReactNode; className?: string }) => (
-  <motion.div
-    initial={{ opacity: 0, y: 50 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true, margin: "-100px" }}
-    transition={{ duration: 0.8, ease: "easeOut" }}
-    className={className}
-  >
-    {children}
-  </motion.div>
-);
+// Cache-First Strategy: Revalidate every hour
+export const revalidate = 3600;
 
-export default function Home() {
+export default async function Home() {
+  // Parallel Data Fetching
+  const [settings, projects, tools, courses, blogPosts] = await Promise.all([
+    CMSService.getGlobalSettings(),
+    CMSService.getProjects(),
+    CMSService.getTools(),
+    CMSService.getPublishedCourses(),
+    BlogService.getPublishedPosts(),
+  ]);
+
+  const featuredProject = projects.length > 0 ? projects[0] : null;
+  const featuredTool = tools.length > 0 ? tools[0] : null;
+  const featuredBlog = blogPosts.length > 0 ? blogPosts[0] : null;
+
   return (
     <main className="bg-black min-h-screen text-white overflow-hidden">
       {/* A. Hero Section */}
-      <Hero />
+      <Hero
+        settings={settings}
+        projectCount={projects.length}
+        toolCount={tools.length}
+      />
 
       {/* B. Tech Marquee */}
       <Section className="relative z-10">
@@ -34,12 +42,16 @@ export default function Home() {
 
       {/* C. Bento Showcase */}
       <Section>
-        <BentoShowcase />
+        <BentoShowcase
+          project={featuredProject}
+          blog={featuredBlog}
+          tool={featuredTool}
+        />
       </Section>
 
       {/* D. Course Teaser */}
       <Section>
-        <CourseTeaser />
+        <CourseTeaser courses={courses.slice(0, 3)} />
       </Section>
 
       {/* E. Philosophy / About */}

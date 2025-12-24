@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, MapPin, Users, Globe, ArrowRight, Loader2, X, Printer } from "lucide-react";
 import { CMSService, Event } from "@/lib/cms-service";
+import { generateEventSchema } from "@/lib/schema-generator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,6 +47,14 @@ export default function PublicEventsPage() {
 
     return (
         <div className="min-h-screen pt-24 pb-20 container mx-auto px-4">
+            {events.length > 0 && (
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify(events.map(event => generateEventSchema(event))),
+                    }}
+                />
+            )}
             {/* Header */}
             <div className="mb-16 text-center">
                 <motion.h1

@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { GlassCard } from "@/components/shared/glass-card";
 import { EnrollmentModal } from "@/components/courses/enrollment-modal";
 import { LessonsList } from "@/components/courses/lessons-list";
+import { generateCourseSchema } from "@/lib/schema-generator";
 
 function CourseDetailContent() {
     const pathname = usePathname();
@@ -127,6 +128,14 @@ function CourseDetailContent() {
 
     return (
         <div className="min-h-screen pb-20">
+            {course && (
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify(generateCourseSchema(course)),
+                    }}
+                />
+            )}
             {/* Hero Section */}
             <div className="relative h-[60vh] min-h-[400px] w-full overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent z-10" />

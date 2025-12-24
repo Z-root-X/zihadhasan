@@ -75,14 +75,29 @@ service cloud.firestore {
     }
 
     match /registrations/{registrationId} {
-      // Allow create if user is authenticated and claiming their own userId
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Allow create if user is authenticated, claims their own userId, AND status is pending
+      allow create: if request.auth != null 
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.status == 'pending';
       
       // Allow read if Admin OR if the user owns the registration
       allow read: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);
       
-      // Allow update, delete: if Admin
-      allow update, delete: if isAdmin();
+      // Allow delete: if Admin
+      allow delete: if isAdmin();
+
+      // Allow update: 
+      // 1. Admin can do anything
+      // 2. User can update ONLY 'completedLessonIds' (Progress tracking) 
+      //    AND cannot change status, userId, courseId, eventId
+      allow update: if isAdmin() || (
+        request.auth != null 
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId // No ownership transfer
+        && request.resource.data.status == resource.data.status // Cannot approve self
+        && request.resource.data.courseId == resource.data.courseId // Cannot switch course
+        && request.resource.data.eventId == resource.data.eventId // Cannot switch event
+      );
     }
     
     // --- Contact Messages ---

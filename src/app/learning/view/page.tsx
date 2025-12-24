@@ -108,7 +108,7 @@ function CoursePlayerContent() {
         const isCompleted = completedLessonIds.includes(lessonId);
         const newStatus = !isCompleted; // Toggle
 
-        // Optimistic Update
+        // 1. Optimistic Update (Immediate)
         setCompletedLessonIds(prev =>
             newStatus
                 ? [...prev, lessonId]
@@ -116,12 +116,14 @@ function CoursePlayerContent() {
         );
 
         try {
+            // 2. Background Sync
             await CMSService.toggleLessonCompletion(registration.id, lessonId, newStatus);
-            toast.success(newStatus ? "Lesson marked as complete" : "Lesson marked as incomplete");
+            // Success: No toast needed for toggle actions (visual feedback is sufficient)
         } catch (error) {
             console.error("Failed to update progress", error);
-            toast.error("Failed to save progress");
-            // Revert on error
+            toast.error("Failed to save progress. Please try again.");
+
+            // 3. Rollback on Error
             setCompletedLessonIds(prev =>
                 newStatus
                     ? prev.filter(id => id !== lessonId)

@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { BlogPost, CMSService } from "@/lib/cms-service";
 import { usePathname } from "next/navigation";
 import { BlogPostRenderer } from "@/components/blog/blog-post-renderer";
+import { generateBlogPostSchema } from "@/lib/schema-generator";
 
 function BlogPostContent() {
     const pathname = usePathname();
@@ -57,7 +58,17 @@ function BlogPostContent() {
         );
     }
 
-    return <BlogPostRenderer post={post} />;
+    return (
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(generateBlogPostSchema(post)),
+                }}
+            />
+            <BlogPostRenderer post={post} />
+        </>
+    );
 }
 
 export default function BlogPostViewerPage() {

@@ -1,49 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { BentoGrid, BentoGridItem } from "@/components/shared/bento-grid";
-import { CMSService, Project, Tool } from "@/lib/cms-service";
-import { BlogService, BlogPost } from "@/lib/blog-service";
+import { Project, Tool } from "@/lib/cms-service";
+import { BlogPost } from "@/lib/blog-service";
 import { SpotlightCard } from "@/components/ui/spotlight-card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Github, ArrowUpRight, Cpu, Quote } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
-export function BentoShowcase() {
-    const [project, setProject] = useState<Project | null>(null);
-    const [blog, setBlog] = useState<BlogPost | null>(null);
-    const [tool, setTool] = useState<Tool | null>(null);
-    const [loading, setLoading] = useState(true);
+interface BentoShowcaseProps {
+    project: Project | null;
+    blog: BlogPost | null;
+    tool: Tool | null;
+}
 
-    useEffect(() => {
-        async function fetchData() {
-            try {
-                const [projects, posts, tools] = await Promise.all([
-                    CMSService.getProjects(),
-                    BlogService.getPublishedPosts(),
-                    CMSService.getTools()
-                ]);
-
-                if (projects.length > 0) setProject(projects[0]);
-                if (posts.length > 0) setBlog(posts[0]);
-                if (tools.length > 0) setTool(tools[0]);
-            } catch (error) {
-                console.error("Failed to load Bento data", error);
-            } finally {
-                setLoading(false);
-            }
-        }
-        fetchData();
-    }, []);
-
-    if (loading) {
-        return (
-            <div className="py-20 max-w-7xl mx-auto px-4">
-                <Skeleton className="h-[600px] w-full rounded-3xl bg-neutral-900" />
-            </div>
-        );
-    }
+export function BentoShowcase({ project, blog, tool }: BentoShowcaseProps) {
 
     return (
         <section className="py-20 px-4 bg-black">

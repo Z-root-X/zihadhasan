@@ -5,12 +5,13 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { Hammer } from "lucide-react"; // Fallback icon
 
-interface SmartImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
+interface SmartImageProps extends Omit<React.ComponentProps<typeof Image>, "src" | "alt"> {
     src?: string;
     alt: string;
     aspectRatio?: "16/9" | "4/3" | "1/1" | "auto";
     className?: string;
     fill?: boolean;
+    blurDataURL?: string;
 }
 
 export function SmartImage({
@@ -22,6 +23,7 @@ export function SmartImage({
     ...props
 }: SmartImageProps) {
     const [error, setError] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     // If no src or error, show "Smart Error Placeholder"
     if (!src || error) {
@@ -52,14 +54,22 @@ export function SmartImage({
     // Standard Next/Image wrapper
     if (fill) {
         return (
-            <div className={cn("relative overflow-hidden", className)}>
+            <div className={cn("relative overflow-hidden bg-white/5", className)}>
                 <Image
                     src={src}
                     alt={alt}
                     fill
-                    className="object-cover transition-transform duration-500 hover:scale-105"
+                    className={cn(
+                        "object-cover transition-all duration-700 ease-in-out",
+                        isLoading ? "scale-110 blur-xl grayscale" : "scale-100 blur-0 grayscale-0",
+                        "hover:scale-105" // Keep hover effect
+                    )}
+                    onLoad={() => setIsLoading(false)}
                     onError={() => setError(true)}
                     unoptimized // Allow external URLs easily without config
+                    placeholder={props.blurDataURL ? "blur" : undefined}
+                    blurDataURL={props.blurDataURL}
+                    {...props}
                 />
             </div>
         );
@@ -68,7 +78,7 @@ export function SmartImage({
     return (
         <div
             className={cn(
-                "relative overflow-hidden",
+                "relative overflow-hidden bg-white/5",
                 aspectRatio === "16/9" && "aspect-video",
                 aspectRatio === "4/3" && "aspect-[4/3]",
                 aspectRatio === "1/1" && "aspect-square",
@@ -79,9 +89,17 @@ export function SmartImage({
                 src={src}
                 alt={alt}
                 fill
-                className="object-cover transition-transform duration-500 hover:scale-105"
+                className={cn(
+                    "object-cover transition-all duration-700 ease-in-out",
+                    isLoading ? "scale-110 blur-xl grayscale" : "scale-100 blur-0 grayscale-0",
+                    "hover:scale-105" // Keep hover effect
+                )}
+                onLoad={() => setIsLoading(false)}
                 onError={() => setError(true)}
                 unoptimized
+                placeholder={props.blurDataURL ? "blur" : undefined}
+                blurDataURL={props.blurDataURL}
+                {...props}
             />
         </div>
     );

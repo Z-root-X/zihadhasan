@@ -25,6 +25,8 @@ export default function ToolsPage() {
 
     const [editingTool, setEditingTool] = useState<Tool | null>(null);
 
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
     useEffect(() => {
         loadTools();
     }, []);
@@ -66,8 +68,34 @@ export default function ToolsPage() {
             await CMSService.deleteTool(id);
             setTools(prev => prev.filter(t => t.id !== id));
             setDeletingId(null);
+            setSelectedIds(prev => prev.filter(selId => selId !== id)); // Remove from selection
         } catch (error) {
             console.error(error);
+        }
+    };
+
+    const toggleSelection = (id: string) => {
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        );
+    };
+
+    const toggleAll = () => {
+        if (selectedIds.length === tools.length) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(tools.map(t => t.id).filter(Boolean) as string[]);
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (!confirm(`Are you sure you want to delete ${selectedIds.length} tools?`)) return; // Simple confirm for bulk
+        try {
+            await CMSService.bulkDeleteTools(selectedIds);
+            setTools(prev => prev.filter(t => !selectedIds.includes(t.id!)));
+            setSelectedIds([]);
+        } catch (error) {
+            console.error("Bulk delete failed", error);
         }
     };
 
@@ -78,9 +106,19 @@ export default function ToolsPage() {
                     <h2 className="text-3xl font-bold tracking-tight text-white">AI Tools</h2>
                     <p className="text-muted-foreground">Manage your curated list of AI resources.</p>
                 </div>
-                <Button onClick={handleCreate} className="bg-primary text-black hover:bg-primary/90">
-                    <Plus className="mr-2 h-4 w-4" /> Add Tool
-                </Button>
+                <div className="flex items-center gap-2">
+                    {selectedIds.length > 0 && (
+                        <Button variant="destructive" onClick={handleBulkDelete}>
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete ({selectedIds.length})
+                        </Button>
+                    )}
+                    <Button onClick={toggleAll} variant="outline" className="border-white/10 text-white hover:bg-white/10">
+                        {selectedIds.length === tools.length ? "Deselect All" : "Select All"}
+                    </Button>
+                    <Button onClick={handleCreate} className="bg-primary text-black hover:bg-primary/90">
+                        <Plus className="mr-2 h-4 w-4" /> Add Tool
+                    </Button>
+                </div>
             </div>
 
             {loading ? (
@@ -92,9 +130,21 @@ export default function ToolsPage() {
                     {tools.map((tool) => (
                         <div
                             key={tool.id}
-                            className="group relative flex flex-col rounded-lg border border-white/10 bg-white/5 p-4 transition-all hover:bg-white/10 hover:border-primary/20"
+                            className={`group relative flex flex-col rounded-lg border p-4 transition-all hover:bg-white/10 ${selectedIds.includes(tool.id!)
+                                    ? "border-primary bg-primary/5"
+                                    : "border-white/10 bg-white/5 hover:border-primary/20"
+                                }`}
                         >
-                            <div className="flex items-start justify-between mb-3">
+                            <div className="absolute top-3 right-3 z-10">
+                                <input
+                                    type="checkbox"
+                                    checked={selectedIds.includes(tool.id!)}
+                                    onChange={() => toggleSelection(tool.id!)}
+                                    className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer accent-primary"
+                                />
+                            </div>
+
+                            <div className="flex items-start justify-between mb-3 pr-6">
                                 <div className="flex items-center gap-3">
                                     <div className="h-10 w-10 rounded-lg bg-black/50 overflow-hidden border border-white/10 flex items-center justify-center">
                                         {tool.imageUrl ? (
@@ -110,30 +160,31 @@ export default function ToolsPage() {
                                         </span>
                                     </div>
                                 </div>
-                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => handleEdit(tool)} className="p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-white">
-                                        <Pencil className="h-3.5 w-3.5" />
-                                    </button>
-                                    <button onClick={() => tool.id && setDeletingId(tool.id)} className="p-1.5 hover:bg-red-500/20 rounded text-gray-400 hover:text-red-400">
-                                        <Trash2 className="h-3.5 w-3.5" />
-                                    </button>
-                                </div>
                             </div>
 
                             <p className="text-xs text-gray-400 line-clamp-2 mb-3 flex-1">
                                 {tool.description}
                             </p>
 
-                            <a
-                                href={tool.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="mt-auto flex items-center justify-center gap-2 w-full rounded bg-white/5 py-2 text-xs font-medium text-gray-300 hover:bg-primary hover:text-black transition-colors"
-                            >
-                                <ExternalLink className="h-3 w-3" /> Visit Site
-                            </a>
+                            <div className="mt-auto flex gap-2">
+                                <a
+                                    href={tool.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="flex-1 flex items-center justify-center gap-2 rounded bg-white/5 py-2 text-xs font-medium text-gray-300 hover:bg-primary hover:text-black transition-colors"
+                                >
+                                    <ExternalLink className="h-3 w-3" /> Visit
+                                </a>
+                                <button onClick={() => handleEdit(tool)} className="p-2 hover:bg-white/10 rounded text-gray-400 hover:text-white border border-white/5">
+                                    <Pencil className="h-3.5 w-3.5" />
+                                </button>
+                                <button onClick={() => tool.id && setDeletingId(tool.id)} className="p-2 hover:bg-red-500/20 rounded text-gray-400 hover:text-red-400 border border-white/5">
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                            </div>
                         </div>
                     ))}
+
 
                     {tools.length === 0 && (
                         <div className="col-span-full py-16 text-center border border-dashed border-white/10 rounded-xl">

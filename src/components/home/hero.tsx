@@ -6,29 +6,15 @@ import { Button } from "@/components/ui/button";
 import { MagneticButton } from "@/components/ui/magnetic-button";
 import Link from "next/link";
 import Image from "next/image";
+import { GlobalSettings } from "@/lib/cms-service";
 
-import { CMSService } from "@/lib/cms-service";
-import { useEffect, useState } from "react";
+interface HeroProps {
+    settings: GlobalSettings | null;
+    projectCount: number;
+    toolCount: number;
+}
 
-export function Hero() {
-    const [settings, setSettings] = useState<any>(null);
-    const [stats, setStats] = useState({ projects: 0, tools: 0, students: 500 }); // Default students base
-
-    useEffect(() => {
-        Promise.all([
-            CMSService.getGlobalSettings(),
-            CMSService.getProjects(),
-            CMSService.getTools()
-        ]).then(([settingsData, projectsData, toolsData]) => {
-            setSettings(settingsData);
-            setStats({
-                projects: projectsData.length,
-                tools: toolsData.length,
-                students: 500 + Math.floor(Math.random() * 100) // Mock dynamic student count > 500
-            });
-        });
-    }, []);
-
+export function Hero({ settings, projectCount, toolCount }: HeroProps) {
     // 3D Tilt Logic
     const x = useMotionValue(0);
     const y = useMotionValue(0);
@@ -168,9 +154,9 @@ export function Hero() {
                         className="mt-12 flex flex-wrap items-center justify-center lg:justify-start gap-8 border-t border-white/10 pt-8"
                     >
                         {[
-                            { label: "Projects Built", value: `${stats.projects}+` },
-                            { label: "Students", value: `${stats.students}+` },
-                            { label: "AI Tools", value: `${stats.tools}+` }
+                            { label: "Projects Built", value: `${projectCount}+` },
+                            { label: "Students", value: "500+" },
+                            { label: "AI Tools", value: `${toolCount}+` }
                         ].map((stat, i) => (
                             <div key={i} className="flex flex-col">
                                 <span className="text-2xl font-bold text-white">{stat.value}</span>

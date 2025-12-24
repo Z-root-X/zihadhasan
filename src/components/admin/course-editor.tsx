@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { doc, collection, addDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,16 @@ import { Loader2, Plus, Trash2, Video, GripVertical } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImageUploader } from "@/components/admin/image-uploader";
 import { toast } from "sonner";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export interface Lesson {
     title: string;
@@ -43,6 +53,68 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
     const [headerImage, setHeaderImage] = useState(course?.headerImage || "");
     const [published, setPublished] = useState(course?.published || false);
     const [lessons, setLessons] = useState<Lesson[]>(course?.lessons || []);
+
+    // Draft State
+    const [showDraftDialog, setShowDraftDialog] = useState(false);
+    const [draftToRestore, setDraftToRestore] = useState<any>(null);
+
+    // Auto-save Draft
+    useEffect(() => {
+        if (course) return; // Only for new courses
+
+        const saveDraft = () => {
+            if (!title && !description) return;
+
+            const draftData = {
+                title,
+                description,
+                price,
+                headerImage,
+                published,
+                lessons,
+                savedAt: Date.now()
+            };
+            localStorage.setItem('course_draft_new', JSON.stringify(draftData));
+        };
+
+        const interval = setInterval(saveDraft, 15000);
+        return () => clearInterval(interval);
+    }, [title, description, price, headerImage, published, lessons, course]);
+
+    // Check Draft on Mount
+    useEffect(() => {
+        if (!course) {
+            const savedDraft = localStorage.getItem('course_draft_new');
+            if (savedDraft) {
+                try {
+                    const parsed = JSON.parse(savedDraft);
+                    setDraftToRestore(parsed);
+                    setShowDraftDialog(true);
+                } catch (e) {
+                    console.error("Failed to parse draft", e);
+                }
+            }
+        }
+    }, [course]);
+
+    const handleRestoreDraft = () => {
+        if (draftToRestore) {
+            setTitle(draftToRestore.title || "");
+            setDescription(draftToRestore.description || "");
+            setPrice(draftToRestore.price || 0);
+            setHeaderImage(draftToRestore.headerImage || "");
+            setPublished(draftToRestore.published || false);
+            setLessons(draftToRestore.lessons || []);
+            toast.success("Draft Restored");
+        }
+        setShowDraftDialog(false);
+    };
+
+    const handleDiscardDraft = () => {
+        localStorage.removeItem('course_draft_new');
+        setShowDraftDialog(false);
+        toast.info("Draft Discarded");
+    };
 
     const handleAddLesson = () => {
         setLessons([
@@ -86,6 +158,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                 });
                 toast.success("Course published successfully!");
             }
+            if (!course) localStorage.removeItem('course_draft_new');
             onSave();
         } catch (error) {
             console.error("Failed to save course", error);
@@ -232,6 +305,26 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                     </Card>
                 </div>
             </div>
+
+            <AlertDialog open={showDraftDialog} onOpenChange={setShowDraftDialog}>
+                <AlertDialogContent className="bg-zinc-900 border-white/10 text-white">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Unsaved Course Draft Found</AlertDialogTitle>
+                        <AlertDialogDescription className="text-gray-400">
+                            We found an unsaved course draft from {draftToRestore?.savedAt ? new Date(draftToRestore.savedAt).toLocaleString() : 'a previous session'}.
+                            Would you like to restore it?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={handleDiscardDraft} className="border-white/10 hover:bg-white/10 hover:text-white text-gray-400">
+                            Discard
+                        </AlertDialogCancel>
+                        <AlertDialogAction onClick={handleRestoreDraft} className="bg-primary text-black hover:bg-primary/90">
+                            Restore Draft
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

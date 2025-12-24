@@ -1,40 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { CMSService, Course } from "@/lib/cms-service";
 import { SpotlightCard } from "@/components/ui/spotlight-card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BookOpen, Clock } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
-export function CourseTeaser() {
-    const [courses, setCourses] = useState<Course[]>([]);
-    const [loading, setLoading] = useState(true);
+interface CourseTeaserProps {
+    courses: Course[];
+}
 
-    useEffect(() => {
-        CMSService.getPublishedCourses()
-            .then((data) => {
-                setCourses(data.slice(0, 3));
-            })
-            .catch((err) => {
-                console.error("Failed to load courses:", err);
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-    }, []);
-
-    if (loading) {
-        return (
-            <div className="grid md:grid-cols-3 gap-8 py-10 max-w-7xl mx-auto px-4">
-                {[1, 2, 3].map(i => <Skeleton key={i} className="h-[400px] w-full bg-neutral-900 rounded-3xl" />)}
-            </div>
-        );
-    }
-
+export function CourseTeaser({ courses }: CourseTeaserProps) {
     if (courses.length === 0) return null;
 
     return (

@@ -16,6 +16,16 @@ import slugify from 'slugify';
 import { Timestamp } from 'firebase/firestore';
 import { ImageUploader } from '@/components/admin/image-uploader';
 import { toast } from 'sonner';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface BlogEditorProps {
     initialData?: BlogPost;
@@ -47,12 +57,75 @@ export function BlogEditor({ initialData }: BlogEditorProps) {
         },
     });
 
+    const [showDraftDialog, setShowDraftDialog] = useState(false);
+    const [draftToRestore, setDraftToRestore] = useState<any>(null);
+
     // Auto-generate slug from title if creating new post
     useEffect(() => {
         if (!initialData && title) {
             setSlug(slugify(title, { lower: true, strict: true }));
         }
     }, [title, initialData]);
+
+    // Auto-save Draft
+    useEffect(() => {
+        if (initialData) return; // Only auto-save for new posts for now to avoid overwriting edit data with old drafts
+
+        const saveDraft = () => {
+            // Only save if there's actual content
+            if (!title && !editor?.getText() && !coverImage) return;
+
+            const draftData = {
+                title,
+                slug,
+                excerpt,
+                content: editor?.getHTML(),
+                coverImage,
+                tags,
+                savedAt: Date.now()
+            };
+            localStorage.setItem('blog_draft_new', JSON.stringify(draftData));
+        };
+
+        const interval = setInterval(saveDraft, 15000); // Save every 15s
+        return () => clearInterval(interval);
+    }, [title, slug, excerpt, editor, coverImage, tags, initialData]);
+
+    // Check for Draft on Mount
+    useEffect(() => {
+        if (!initialData) {
+            const savedDraft = localStorage.getItem('blog_draft_new');
+            if (savedDraft) {
+                try {
+                    const parsed = JSON.parse(savedDraft);
+                    // Check if draft is recent (e.g., last 24 hours) - optional
+                    setDraftToRestore(parsed);
+                    setShowDraftDialog(true);
+                } catch (e) {
+                    console.error("Failed to parse draft", e);
+                }
+            }
+        }
+    }, [initialData]);
+
+    const handleRestoreDraft = () => {
+        if (draftToRestore) {
+            setTitle(draftToRestore.title || "");
+            setSlug(draftToRestore.slug || "");
+            setExcerpt(draftToRestore.excerpt || "");
+            setCoverImage(draftToRestore.coverImage || "");
+            setTags(draftToRestore.tags || "");
+            editor?.commands.setContent(draftToRestore.content || "");
+            toast.success("Draft Restored");
+        }
+        setShowDraftDialog(false);
+    };
+
+    const handleDiscardDraft = () => {
+        localStorage.removeItem('blog_draft_new');
+        setShowDraftDialog(false);
+        toast.info("Draft Discarded");
+    };
 
     const handleSave = async () => {
         if (!editor) return;
@@ -81,6 +154,7 @@ export function BlogEditor({ initialData }: BlogEditorProps) {
                 // For now, simple create.
                 await CMSService.createPost(postData);
             }
+            if (!initialData) localStorage.removeItem('blog_draft_new'); // Clear draft on success
             router.push('/dashboard/blog');
             router.refresh();
         } catch (error) {
@@ -196,6 +270,26 @@ export function BlogEditor({ initialData }: BlogEditorProps) {
                     <EditorContent editor={editor} />
                 </div>
             </div>
+
+            <AlertDialog open={showDraftDialog} onOpenChange={setShowDraftDialog}>
+                <AlertDialogContent className="bg-zinc-900 border-white/10 text-white">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Unsaved Draft Found</AlertDialogTitle>
+                        <AlertDialogDescription className="text-gray-400">
+                            We found an unsaved draft from {draftToRestore?.savedAt ? new Date(draftToRestore.savedAt).toLocaleString() : 'a previous session'}.
+                            Would you like to restore it?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={handleDiscardDraft} className="border-white/10 hover:bg-white/10 hover:text-white text-gray-400">
+                            Discard
+                        </AlertDialogCancel>
+                        <AlertDialogAction onClick={handleRestoreDraft} className="bg-primary text-black hover:bg-primary/90">
+                            Restore Draft
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

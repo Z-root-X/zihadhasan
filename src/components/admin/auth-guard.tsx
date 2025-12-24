@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useRouter, usePathname } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { DashboardSkeleton } from "@/components/admin/dashboard-skeleton";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
     const { user, loading, isAdmin } = useAuth();
@@ -23,11 +23,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     }, [user, loading, isAdmin, router, pathname]);
 
     if (loading) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-black text-white">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        );
+        return <DashboardSkeleton />;
     }
 
     if (!user || !isAdmin) {

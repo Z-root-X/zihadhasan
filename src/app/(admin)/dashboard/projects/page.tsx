@@ -26,6 +26,9 @@ export default function ProjectsPage() {
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
     // Initial Load
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+    // Initial Load
     useEffect(() => {
         loadProjects();
     }, []);
@@ -54,20 +57,12 @@ export default function ProjectsPage() {
 
     const handleSubmit = async (data: Project) => {
         if (editingProject && editingProject.id) {
-            // Update logic needs to be in CMSService. Wait, I saw `addProject` but did I see `updateProject`?
-            // Let's check the Service file. 
-            // I recall: addProject, getProjects, deleteProject. 
-            // MISSING: updateProject.
-            // I need to add that to CMSService!
-            // For now I will assume it exists or I will add it immediately.
             await CMSService.updateProject(editingProject.id, data);
         } else {
             await CMSService.addProject(data);
         }
         await loadProjects();
     };
-
-    // Quick Fix for missing updateProject: I will implement it in the next step.
 
     const handleDelete = async (id: string) => {
         // Confirmation handled by AlertDialog
@@ -76,8 +71,34 @@ export default function ProjectsPage() {
             // Optimistic update
             setProjects(prev => prev.filter(p => p.id !== id));
             setDeletingId(null);
+            setSelectedIds(prev => prev.filter(selId => selId !== id));
         } catch (error) {
             console.error("Failed to delete", error);
+        }
+    };
+
+    const toggleSelection = (id: string) => {
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        );
+    };
+
+    const toggleAll = () => {
+        if (selectedIds.length === projects.length) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(projects.map(p => p.id).filter(Boolean) as string[]);
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (!confirm(`Are you sure you want to delete ${selectedIds.length} projects?`)) return;
+        try {
+            await CMSService.bulkDeleteProjects(selectedIds);
+            setProjects(prev => prev.filter(p => !selectedIds.includes(p.id!)));
+            setSelectedIds([]);
+        } catch (error) {
+            console.error("Bulk delete failed", error);
         }
     };
 
@@ -88,9 +109,19 @@ export default function ProjectsPage() {
                     <h2 className="text-3xl font-bold tracking-tight text-white">Projects</h2>
                     <p className="text-muted-foreground">Manage your portfolio showcase.</p>
                 </div>
-                <Button onClick={handleCreate} className="bg-primary text-black hover:bg-primary/90">
-                    <Plus className="mr-2 h-4 w-4" /> Add Project
-                </Button>
+                <div className="flex items-center gap-2">
+                    {selectedIds.length > 0 && (
+                        <Button variant="destructive" onClick={handleBulkDelete}>
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete ({selectedIds.length})
+                        </Button>
+                    )}
+                    <Button onClick={toggleAll} variant="outline" className="border-white/10 text-white hover:bg-white/10">
+                        {selectedIds.length === projects.length ? "Deselect All" : "Select All"}
+                    </Button>
+                    <Button onClick={handleCreate} className="bg-primary text-black hover:bg-primary/90">
+                        <Plus className="mr-2 h-4 w-4" /> Add Project
+                    </Button>
+                </div>
             </div>
 
             {loading ? (
@@ -102,8 +133,20 @@ export default function ProjectsPage() {
                     {projects.map((project) => (
                         <div
                             key={project.id}
-                            className="group relative flex flex-col overflow-hidden rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5"
+                            className={`group relative flex flex-col overflow-hidden rounded-xl border backdrop-blur-sm transition-all hover:shadow-lg ${selectedIds.includes(project.id!)
+                                    ? "border-primary bg-primary/5 shadow-primary/10"
+                                    : "border-white/10 bg-white/5 hover:border-primary/50 hover:shadow-primary/5"
+                                }`}
                         >
+                            <div className="absolute top-3 right-3 z-30">
+                                <input
+                                    type="checkbox"
+                                    checked={selectedIds.includes(project.id!)}
+                                    onChange={() => toggleSelection(project.id!)}
+                                    className="w-5 h-5 rounded border-white/50 bg-black/50 text-primary focus:ring-primary cursor-pointer accent-primary backdrop-blur"
+                                />
+                            </div>
+
                             {/* Image Aspect Ratio */}
                             <div className="relative aspect-video w-full overflow-hidden bg-black/50">
                                 <img
@@ -111,13 +154,19 @@ export default function ProjectsPage() {
                                     alt={project.title}
                                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                                 />
-                                <div className="absolute inset-0 bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 flex items-center justify-center gap-2">
-                                    <Button size="sm" variant="secondary" onClick={() => handleEdit(project)}>
-                                        <Pencil className="h-4 w-4 mr-2" /> Edit
-                                    </Button>
-                                    <Button size="sm" variant="destructive" onClick={() => project.id && setDeletingId(project.id)}>
-                                        <Trash2 className="h-4 w-4 mr-2" /> Delete
-                                    </Button>
+                                <div className="absolute inset-0 bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 flex items-center justify-center gap-2 z-20 pointer-events-none">
+                                    {/* pointer-events-none on overlay to let clicks confirm passing through? No, wait. 
+                                        If I want buttons to work, pointer-events must be auto. 
+                                        But Checkbox is z-30. Buttons are z-20. 
+                                    */}
+                                    <div className="pointer-events-auto flex gap-2">
+                                        <Button size="sm" variant="secondary" onClick={() => handleEdit(project)}>
+                                            <Pencil className="h-4 w-4 mr-2" /> Edit
+                                        </Button>
+                                        <Button size="sm" variant="destructive" onClick={() => project.id && setDeletingId(project.id)}>
+                                            <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
 

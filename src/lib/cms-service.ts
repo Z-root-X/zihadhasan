@@ -28,6 +28,7 @@ export interface Event {
     isVirtual: boolean;
     imageUrl?: string;
     createdAt?: Timestamp;
+    isDeleted?: boolean;
 }
 
 export interface Registration {
@@ -56,6 +57,7 @@ export interface Project {
     liveLink: string;
     githubLink: string;
     createdAt?: Timestamp;
+    isDeleted?: boolean;
 }
 
 export interface Tool {
@@ -66,6 +68,7 @@ export interface Tool {
     url: string;
     imageUrl?: string;
     createdAt?: Timestamp;
+    isDeleted?: boolean;
 }
 
 export interface SocialLink {
@@ -155,6 +158,7 @@ export interface Course {
     published: boolean;
     lessons: Lesson[];
     createdAt?: Timestamp;
+    isDeleted?: boolean;
 }
 
 export interface Lesson {
@@ -175,18 +179,30 @@ export const CMSService = {
     },
 
     getProjects: async () => {
-        const q = query(collection(db, "projects"), orderBy("createdAt", "desc"), limit(20));
+        const q = query(
+            collection(db, "projects"),
+            orderBy("createdAt", "desc"),
+            limit(20)
+        );
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
+        return snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() } as Project))
+            .filter(p => !p.isDeleted); // In-memory filtering (Cost: reads deleted docs, Benefit: No Index needed)
     },
 
     deleteProject: async (id: string) => {
-        await deleteDoc(doc(db, "projects", id));
+        // Soft Delete
+        await updateDoc(doc(db, "projects", id), { isDeleted: true });
     },
 
     updateProject: async (id: string, data: Partial<Project>) => {
         const docRef = doc(db, "projects", id);
         await updateDoc(docRef, data);
+    },
+
+    bulkDeleteProjects: async (ids: string[]) => {
+        const promises = ids.map(id => updateDoc(doc(db, "projects", id), { isDeleted: true }));
+        await Promise.all(promises);
     },
 
     // --- Tools ---
@@ -198,18 +214,30 @@ export const CMSService = {
     },
 
     getTools: async () => {
-        const q = query(collection(db, "tools"), orderBy("createdAt", "desc"), limit(20));
+        const q = query(
+            collection(db, "tools"),
+            orderBy("createdAt", "desc"),
+            limit(20)
+        );
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Tool));
+        return snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() } as Tool))
+            .filter(t => !t.isDeleted);
     },
 
     deleteTool: async (id: string) => {
-        await deleteDoc(doc(db, "tools", id));
+        // Soft Delete
+        await updateDoc(doc(db, "tools", id), { isDeleted: true });
     },
 
     updateTool: async (id: string, data: Partial<Tool>) => {
         const docRef = doc(db, "tools", id);
         await updateDoc(docRef, data);
+    },
+
+    bulkDeleteTools: async (ids: string[]) => {
+        const promises = ids.map(id => updateDoc(doc(db, "tools", id), { isDeleted: true }));
+        await Promise.all(promises);
     },
 
     // --- Messages ---
@@ -243,9 +271,15 @@ export const CMSService = {
     },
 
     getEvents: async () => {
-        const q = query(collection(db, "events"), orderBy("date", "asc"), limit(20));
+        const q = query(
+            collection(db, "events"),
+            orderBy("date", "asc"),
+            limit(20)
+        );
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
+        return snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() } as Event))
+            .filter(e => !e.isDeleted);
     },
 
     getEvent: async (id: string) => {
@@ -269,7 +303,10 @@ export const CMSService = {
             const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
             await Promise.all(deletePromises);
         }
-        await deleteDoc(doc(db, "events", id));
+        // Soft delete event
+        // Note: For registrations, we might want to keep them or mark them?
+        // Let's just soft delete the event for now.
+        await updateDoc(doc(db, "events", id), { isDeleted: true });
     },
 
     updateEvent: async (id: string, data: Partial<Event>) => {
@@ -472,11 +509,20 @@ export const CMSService = {
 
     // --- Blog ---
     getPosts: async (publishedOnly = true) => {
-        // Simple query to avoid Index requirements for initial build
-        const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+        // Simple query to avoid Index requirements if possible, but 'where' needs index with orderBy usually.
+        // If "isDeleted" is boolean, Firestore might allow it without composite index if order is default?
+        // Actually, where("isDeleted", "!=", true) usually requires index with orderBy.
+        // Let's rely on Firestore building index links in console if needed.
+        // In-memory filtering to handle legacy docs (missing isDeleted field) and avoid composite index
+        const q = query(
+            collection(db, "posts"),
+            orderBy("createdAt", "desc")
+        );
         const snapshot = await getDocs(q);
 
-        let posts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost));
+        let posts = snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() } as BlogPost))
+            .filter(p => !p.isDeleted);
 
         if (publishedOnly) {
             posts = posts.filter(p => p.published);
@@ -512,7 +558,7 @@ export const CMSService = {
     },
 
     deletePost: async (id: string) => {
-        await deleteDoc(doc(db, "posts", id));
+        await updateDoc(doc(db, "posts", id), { isDeleted: true });
     },
 
     // --- Registrations Queries ---
@@ -525,18 +571,23 @@ export const CMSService = {
 
     // --- Courses ---
     getCourses: async () => {
-        // Get all courses (Admin)
+        // Get all courses (Admin) - Filter deleted in memory
         const q = query(collection(db, "courses"));
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
+        return snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() } as Course))
+            .filter(c => !c.isDeleted);
     },
 
     getPublishedCourses: async () => {
-        // Get only published courses (Public)
-        // MUST use where clause to match Security Rules condition (allow read if published == true)
-        const q = query(collection(db, "courses"), where("published", "==", true));
+        const q = query(
+            collection(db, "courses"),
+            where("published", "==", true)
+        );
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
+        return snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() } as Course))
+            .filter(c => !c.isDeleted);
     },
 
     getCourse: async (id: string) => {
@@ -558,7 +609,7 @@ export const CMSService = {
     },
 
     deleteCourse: async (id: string) => {
-        await deleteDoc(doc(db, "courses", id));
+        await updateDoc(doc(db, "courses", id), { isDeleted: true });
     },
 
     // --- Course Registrations ---
@@ -667,4 +718,5 @@ export interface BlogPost {
         name: string;
         avatar?: string;
     };
+    isDeleted?: boolean;
 }
