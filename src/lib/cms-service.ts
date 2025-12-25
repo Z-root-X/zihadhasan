@@ -14,7 +14,8 @@ import {
     runTransaction,
     where,
     limit,
-    startAfter
+    startAfter,
+    writeBatch
 } from "firebase/firestore";
 
 export interface Event {
@@ -293,15 +294,13 @@ export const CMSService = {
             // Delete all associated registrations
             const q = query(collection(db, "registrations"), where("eventId", "==", id));
             const snapshot = await getDocs(q);
-            const batch = runTransaction(db, async (transaction) => {
-                // We'll just do parallel deletes since transaction might be too big for simple batch? 
-                // Actually, simple Promise.all is better for large numbers if not strictly transactional strict consistency requirements
-                // But let's simple delete doc
+
+            // Batch delete (limit 500)
+            const batch = writeBatch(db);
+            snapshot.docs.forEach((doc) => {
+                batch.delete(doc.ref);
             });
-            // Firestore batch limit is 500. Let's just loop delete for simplicity or use batched writes if we want atomicity. 
-            // Loop is safer for now without complexity.
-            const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
-            await Promise.all(deletePromises);
+            await batch.commit();
         }
         // Soft delete event
         // Note: For registrations, we might want to keep them or mark them?
@@ -523,19 +522,35 @@ export const CMSService = {
 
     // --- Blog ---
     getPosts: async (publishedOnly = true) => {
-        const q = query(
-            collection(db, "posts"),
-            orderBy("createdAt", "desc")
-        );
+        let q;
+        if (publishedOnly) {
+            // Query ONLY published to satisfy Security Rules for unauthenticated access
+            // We remove orderBy("createdAt") temporarily to avoid needing a composite index (published + createdAt)
+            // We will sort client-side.
+            q = query(
+                collection(db, "posts"),
+                where("published", "==", true)
+            );
+        } else {
+            // Admin only (authenticated) - can fetch all
+            q = query(
+                collection(db, "posts"),
+                orderBy("createdAt", "desc")
+            );
+        }
+
         const snapshot = await getDocs(q);
 
         let posts = snapshot.docs
             .map(doc => ({ id: doc.id, ...doc.data() } as BlogPost))
             .filter(p => !p.isDeleted);
 
-        if (publishedOnly) {
-            posts = posts.filter(p => p.published);
-        }
+        // Sort client-side (descending)
+        posts.sort((a, b) => {
+            const tA = a.createdAt?.seconds || 0;
+            const tB = b.createdAt?.seconds || 0;
+            return tB - tA;
+        });
 
         return posts;
     },
@@ -580,22 +595,24 @@ export const CMSService = {
 
     // --- Courses ---
     getCourses: async () => {
-        // Get all courses (Admin) - Filter deleted server-side
-        const q = query(collection(db, "courses"), where("isDeleted", "==", false));
+        // Get all courses (Admin) - Filter deleted client-side for consistency
+        const q = query(collection(db, "courses"));
         const snapshot = await getDocs(q);
         return snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() } as Course));
+            .map(doc => ({ id: doc.id, ...doc.data() } as Course))
+            .filter(c => !c.isDeleted);
     },
 
     getPublishedCourses: async () => {
+        // Query ONLY published to satisfy Security Rules for unauthenticated access (e.g. build time)
         const q = query(
             collection(db, "courses"),
-            where("published", "==", true),
-            where("isDeleted", "==", false)
+            where("published", "==", true)
         );
         const snapshot = await getDocs(q);
         return snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() } as Course));
+            .map(doc => ({ id: doc.id, ...doc.data() } as Course))
+            .filter(c => !c.isDeleted);
     },
 
     getCourse: async (id: string) => {

@@ -12,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Loader2, Save, ArrowLeft, Image as ImageIcon, Bold, Italic, List, ListOrdered, Quote, Code, Link as LinkIcon, Undo, Redo } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { BlogPost, CMSService } from '@/lib/cms-service';
+import { useAuth } from '@/components/auth/auth-provider';
 import slugify from 'slugify';
 import { Timestamp } from 'firebase/firestore';
 import { ImageUploader } from '@/components/admin/image-uploader';
@@ -33,6 +34,7 @@ interface BlogEditorProps {
 }
 
 export function BlogEditor({ initialData, localStorageKey = 'blog_draft_new' }: BlogEditorProps) {
+    const { user, profile } = useAuth();
     const router = useRouter();
     const [title, setTitle] = useState(initialData?.title || "");
     const [slug, setSlug] = useState(initialData?.slug || "");
@@ -142,8 +144,8 @@ export function BlogEditor({ initialData, localStorageKey = 'blog_draft_new' }: 
             published: isPublished,
             publishedAt: isPublished ? (initialData?.publishedAt || Timestamp.now()) : undefined,
             author: {
-                name: "Zihad Hasan", // Hardcoded for now, could be dynamic from Auth
-                avatar: "https://github.com/shadcn.png"
+                name: profile?.name || user?.displayName || "Admin",
+                avatar: profile?.photoURL || user?.photoURL || "https://github.com/shadcn.png"
             }
         };
 
