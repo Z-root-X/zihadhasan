@@ -362,12 +362,19 @@ export const CMSService = {
                     transaction.update(eventRef, { registeredCount: (currentRegistered || 0) + 1 });
                 }
 
-                transaction.set(registrationRef, {
+                // Sanitize Payload: Remove undefined values (Firestore throws on undefined)
+                const payload: any = {
                     eventId,
-                    ...userDetails,
+                    email: userDetails.email,
+                    name: userDetails.name,
                     status: status,
                     registeredAt: Timestamp.now(),
-                });
+                };
+                if (userDetails.userId) payload.userId = userDetails.userId;
+                if (userDetails.phone) payload.phone = userDetails.phone;
+                if (userDetails.trxId) payload.trxId = userDetails.trxId;
+
+                transaction.set(registrationRef, payload);
             });
             return { success: true, id: registrationRef.id };
         } catch (e) {
@@ -429,15 +436,19 @@ export const CMSService = {
 
                 transaction.update(regRef, { status: "approved" });
 
-                // Create Notification Doc
-                const notifRef = doc(collection(db, "users", regData.userId!, "notifications"));
-                transaction.set(notifRef, {
-                    title: notificationTitle,
-                    message: notificationMessage,
-                    link: notificationLink,
-                    read: false,
-                    createdAt: Timestamp.now()
-                });
+                transaction.update(regRef, { status: "approved" });
+
+                // Create Notification Doc (Only if user is a registered user with an ID)
+                if (regData.userId) {
+                    const notifRef = doc(collection(db, "users", regData.userId, "notifications"));
+                    transaction.set(notifRef, {
+                        title: notificationTitle,
+                        message: notificationMessage,
+                        link: notificationLink,
+                        read: false,
+                        createdAt: Timestamp.now()
+                    });
+                }
             });
             return { success: true };
         } catch (e) {
@@ -692,12 +703,22 @@ export const CMSService = {
                 }
             }
 
-            await setDoc(registrationRef, {
+            // Sanitize Payload
+            const payload: any = {
                 courseId,
-                ...userDetails,
+                email: userDetails.email,
+                name: userDetails.name,
                 status: status,
                 registeredAt: Timestamp.now()
-            });
+            };
+            if (userDetails.userId) payload.userId = userDetails.userId;
+            if (userDetails.phone) payload.phone = userDetails.phone;
+            if (userDetails.trxId) payload.trxId = userDetails.trxId;
+            if (userDetails.screenshotUrl) payload.screenshotUrl = userDetails.screenshotUrl;
+            if (userDetails.paymentMethod) payload.paymentMethod = userDetails.paymentMethod;
+            if (userDetails.additionalInfo) payload.additionalInfo = userDetails.additionalInfo;
+
+            await setDoc(registrationRef, payload);
             return { success: true, id: registrationRef.id };
         } catch (e) {
             console.error("Course reg failed", e);

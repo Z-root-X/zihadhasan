@@ -23,7 +23,11 @@ const registrationSchema = z.object({
 
 type RegistrationFormValues = z.infer<typeof registrationSchema>;
 
+import { useAuth } from "@/components/auth/auth-provider";
+import { toast } from "sonner";
+
 export default function PublicEventsPage() {
+    const { user, openAuthModal } = useAuth();
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
     const [registeringEvent, setRegisteringEvent] = useState<Event | null>(null);
@@ -78,7 +82,19 @@ export default function PublicEventsPage() {
             ) : (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {events.map((event, index) => (
-                        <EventCard key={event.id} event={event} onRegister={() => setRegisteringEvent(event)} index={index} />
+                        <EventCard
+                            key={event.id}
+                            event={event}
+                            onRegister={() => {
+                                if (!user) {
+                                    toast.error("Please log in to register for events.");
+                                    openAuthModal();
+                                    return;
+                                }
+                                setRegisteringEvent(event);
+                            }}
+                            index={index}
+                        />
                     ))}
                 </div>
             )}
@@ -157,14 +173,17 @@ function EventCard({ event, onRegister, index }: { event: Event, onRegister: () 
     );
 }
 
-function RegistrationModal({ event, open, onOpenChange, onSuccess }: { event: Event | null, open: boolean, onOpenChange: (open: boolean) => void, onSuccess: () => void }) {
-    const isFree = event?.pricingType === 'free';
 
+
+
+function RegistrationModal({ event, open, onOpenChange, onSuccess }: { event: Event | null, open: boolean, onOpenChange: (open: boolean) => void, onSuccess: () => void }) {
+    const { user, profile } = useAuth();
+    const isFree = event?.pricingType === 'free';
+    // ... rest of state ...
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showSuccess, setShowSuccess] = useState(false);
     const [paymentInfo, setPaymentInfo] = useState<{ bkash?: string, nagad?: string, bankAccounts?: any[] }>({});
-
     const [registrationId, setRegistrationId] = useState<string | null>(null);
 
     // Dynamic schema validation
@@ -175,7 +194,7 @@ function RegistrationModal({ event, open, onOpenChange, onSuccess }: { event: Ev
         trxId: isFree ? z.string().optional() : z.string().min(5, "Transaction ID required"),
     });
 
-    const { register, handleSubmit, formState: { errors }, reset } = useForm<RegistrationFormValues>({
+    const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<RegistrationFormValues>({
         // @ts-ignore
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -192,6 +211,14 @@ function RegistrationModal({ event, open, onOpenChange, onSuccess }: { event: Ev
             setError(null);
             setShowSuccess(false);
             setRegistrationId(null);
+
+            // Pre-fill user data if logged in
+            if (user) {
+                setValue("name", user.displayName || profile?.name || "");
+                setValue("email", user.email || "");
+                if (profile?.phone) setValue("phone", profile.phone);
+            }
+
             // Load payment info
             if (!isFree) {
                 CMSService.getGlobalSettings().then(settings => {
@@ -205,7 +232,7 @@ function RegistrationModal({ event, open, onOpenChange, onSuccess }: { event: Ev
                 });
             }
         }
-    }, [open, reset, isFree]);
+    }, [open, reset, isFree, user, profile, setValue]);
 
     const onSubmit = async (data: any) => {
         if (!event || !event.id) return;
@@ -213,7 +240,13 @@ function RegistrationModal({ event, open, onOpenChange, onSuccess }: { event: Ev
         setError(null);
 
         try {
+            if (!user) {
+                toast.error("You must be logged in.");
+                return;
+            }
+
             const result = await CMSService.registerForEvent(event.id, {
+                userId: user.uid, // Guaranteed by check above
                 name: data.name,
                 email: data.email,
                 phone: data.phone,
@@ -225,7 +258,7 @@ function RegistrationModal({ event, open, onOpenChange, onSuccess }: { event: Ev
                 setShowSuccess(true);
                 setTimeout(() => {
                     onSuccess(); // Close and refresh after delay
-                }, 10000); // Increased timeout to let user read ID
+                }, 10000);
             } else {
                 setError(result.error?.toString() || "Registration failed. Please try again.");
             }

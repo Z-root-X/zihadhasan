@@ -45,8 +45,7 @@ export function RegistrationForm({ eventId, eventTitle, price }: { eventId: stri
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsSubmitting(true);
-        // TODO: Integrate Firebase Function / API Route here
-        console.log("Submitting:", { ...values, eventId });
+
 
         // Simulate delay
         await new Promise((resolve) => setTimeout(resolve, 2000));

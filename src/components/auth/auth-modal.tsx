@@ -11,8 +11,10 @@ import {
     signInWithEmailAndPassword,
     signInWithPopup,
     GoogleAuthProvider,
-    updateProfile
+    updateProfile,
+    sendEmailVerification
 } from "firebase/auth";
+import { toast } from "sonner";
 import { auth, db } from "@/lib/firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { Loader2, Mail, Lock, User as UserIcon, Phone, Chrome } from "lucide-react";
@@ -64,6 +66,7 @@ export function AuthModal() {
                 // Login
                 await signInWithEmailAndPassword(auth, email, password);
                 closeAuthModal();
+                toast.success("Welcome back!");
             } else {
                 // Signup
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -75,8 +78,10 @@ export function AuthModal() {
                     // photoURL can be default
                 });
 
-                // Create Firestore Profile manually here to ensure fields like Phone are saved immediately
-                // (AuthProvider might race condition, so explicit write is safe as setDoc merges)
+                // Send Verification Email
+                await sendEmailVerification(user);
+
+                // Create Firestore Profile manually
                 await setDoc(doc(db, "users", user.uid), {
                     uid: user.uid,
                     email: user.email!,
@@ -85,10 +90,14 @@ export function AuthModal() {
                     role: "user",
                     createdAt: serverTimestamp(),
                     enrolledCourses: [],
-                    photoURL: user.photoURL
+                    photoURL: user.photoURL,
+                    isBanned: false
                 }, { merge: true });
 
                 closeAuthModal();
+                toast.success("Account created!", {
+                    description: "We've sent a verification email to your inbox."
+                });
             }
             resetForm();
         } catch (err: any) {

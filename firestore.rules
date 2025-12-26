@@ -51,17 +51,15 @@ service cloud.firestore {
 
     match /events/{docId} {
       allow read: if true;
-      // Admin can do anything
       allow write: if isAdmin();
       
-      // Special Case: Allow authenticated users to increment 'registeredCount' for FREE events
-      // This is required because the client-side transaction updates the event doc directly.
-      allow update: if request.auth != null
-                    && resource.data.pricingType == 'free'
+      // Special Case: Allow ANYONE to increment 'registeredCount' for FREE events
+      allow update: if resource.data.pricingType == 'free'
+                    // Ensure only registeredCount is changed (or added)
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['registeredCount'])
-                    && request.resource.data.registeredCount == resource.data.registeredCount + 1;
+                    && request.resource.data.registeredCount == (resource.data.get('registeredCount', 0) + 1);
     }
-    
+
     match /projects/{docId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -83,10 +81,10 @@ service cloud.firestore {
     }
 
     match /registrations/{registrationId} {
-      // Allow create if user is authenticated, claims their own userId, AND status is pending
-      // OR status is 'approved' IF the associated course/event is FREE.
-      allow create: if request.auth != null 
-                    && request.resource.data.userId == request.auth.uid
+      // Allow create if:
+      // 1. Authenticated User claiming their own userId
+      // 2. Unauthenticated Guest (no userId provided OR userId is null)
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid
                     && (
                       request.resource.data.status == 'pending' || 
                       (
@@ -94,12 +92,12 @@ service cloud.firestore {
                         (
                           // Option 1: Free Course
                           (
-                            request.resource.data.courseId != null && 
+                            'courseId' in request.resource.data && 
                             get(/databases/$(database)/documents/courses/$(request.resource.data.courseId)).data.pricingType == 'free'
                           ) ||
                           // Option 2: Free Event
                           (
-                            request.resource.data.eventId != null && 
+                            'eventId' in request.resource.data && 
                             get(/databases/$(database)/documents/events/$(request.resource.data.eventId)).data.pricingType == 'free'
                           )
                         )
