@@ -116,7 +116,7 @@ export default function MyLearningPage() {
                             const isLocked = course.registrationStatus !== 'approved';
 
                             return (
-                                <Link href={`/learning/${course.id}`} key={course.id} className="group block h-full">
+                                <Link href={`/courses/view?id=${course.id}`} key={course.id} className="group block h-full">
                                     <div className={`bg-white/5 border rounded-xl overflow-hidden transition-colors h-full flex flex-col ${isLocked ? 'border-amber-500/30' : 'border-white/10 hover:border-primary/50'}`}>
                                         <div className="relative aspect-video">
                                             <SmartImage

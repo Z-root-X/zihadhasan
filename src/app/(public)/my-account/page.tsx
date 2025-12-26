@@ -280,7 +280,7 @@ function RegistrationCard({ reg, title, image, type, id, date }: { reg: Registra
 
                 <div className="flex items-center gap-3 mt-2">
                     {isApproved ? (
-                        <Link href={type === 'course' ? `/learning/view?id=${id}` : `/events`}>
+                        <Link href={type === 'course' ? `/courses/view?id=${id}` : `/events`}>
                             <Button size="sm" className={cn(
                                 "font-bold shadow-lg transition-all active:scale-95",
                                 type === 'course' ? "bg-primary text-black hover:bg-primary/90 shadow-primary/20" : "bg-cyan-500 text-black hover:bg-cyan-400 shadow-cyan-500/20"

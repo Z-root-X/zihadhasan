@@ -404,7 +404,7 @@ export const CMSService = {
                     if (courseDoc.exists()) {
                         const courseTitle = courseDoc.data().title;
                         notificationMessage = `You now have access to "${courseTitle}".`;
-                        notificationLink = `/learning/${regData.courseId}`;
+                        notificationLink = `/courses/view?id=${regData.courseId}`;
                     }
                 }
 

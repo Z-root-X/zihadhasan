@@ -62,18 +62,47 @@ export function NotificationBell() {
         if (!user || unreadCount === 0) return;
         try {
             const batch = writeBatch(db);
+            // Strategy: Fetch recent notifications (mixed read/unread) and update the unread ones.
+            // This avoids the need for a composite index on (read + createdAt).
             const q = query(
                 collection(db, "users", user.uid, "notifications"),
-                where("read", "==", false),
-                limit(20) // Batch limit safety
+                orderBy("createdAt", "desc"),
+                limit(50) // Check last 50 items to catch visible unread ones
+            );
+
+            const snapshot = await getDocs(q);
+            let updateCount = 0;
+
+            snapshot.docs.forEach((doc) => {
+                if (doc.data().read === false) {
+                    batch.update(doc.ref, { read: true });
+                    updateCount++;
+                }
+            });
+
+            if (updateCount > 0) {
+                await batch.commit();
+            }
+        } catch (error) {
+            console.error("Error marking all read", error);
+        }
+    };
+
+    const clearAllNotifications = async () => {
+        if (!user || notifications.length === 0) return;
+        try {
+            const batch = writeBatch(db);
+            const q = query(
+                collection(db, "users", user.uid, "notifications"),
+                limit(20) // Batch limit
             );
             const snapshot = await getDocs(q);
             snapshot.docs.forEach((doc) => {
-                batch.update(doc.ref, { read: true });
+                batch.delete(doc.ref);
             });
             await batch.commit();
         } catch (error) {
-            console.error("Error marking all read", error);
+            console.error("Error clearing notifications", error);
         }
     };
 
@@ -106,15 +135,27 @@ export function NotificationBell() {
                             </span>
                         )}
                     </div>
-                    {unreadCount > 0 && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 text-[10px] px-2 text-white/50 hover:text-white hover:bg-white/10"
-                            onClick={markAllAsRead}
-                        >
-                            <CheckCheck className="mr-1 h-3 w-3" /> Mark all read
-                        </Button>
+                    {notifications.length > 0 && (
+                        <div className="flex items-center gap-1">
+                            {unreadCount > 0 && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 text-[10px] px-2 text-primary hover:text-primary/80 hover:bg-primary/10"
+                                    onClick={markAllAsRead}
+                                >
+                                    <CheckCheck className="mr-1 h-3 w-3" /> Mark read
+                                </Button>
+                            )}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-[10px] px-2 text-white/50 hover:text-red-400 hover:bg-red-500/10"
+                                onClick={clearAllNotifications}
+                            >
+                                <Trash2 className="mr-1 h-3 w-3" /> Clear
+                            </Button>
+                        </div>
                     )}
                 </div>
                 <div className="max-h-[300px] overflow-y-auto">
