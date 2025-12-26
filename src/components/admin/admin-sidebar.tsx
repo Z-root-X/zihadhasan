@@ -14,7 +14,8 @@ import {
     Calendar,
     Mail,
     Users,
-    BookOpen
+    BookOpen,
+    Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/firebase";
@@ -24,13 +25,15 @@ import { useRouter } from "next/navigation";
 const sidebarItems = [
     { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
     { label: "Courses", href: "/dashboard/courses", icon: BookOpen },
+    { label: "Events", href: "/dashboard/events", icon: Calendar },
     { label: "Projects", href: "/dashboard/projects", icon: FolderGit },
     { label: "AI Tools", href: "/dashboard/tools", icon: Hammer },
-    { label: "Events", href: "/dashboard/events", icon: Calendar },
+    { label: "Blog", href: "/dashboard/blog", icon: PenTool },
     { label: "Registrations", href: "/dashboard/registrations", icon: Users },
+    { label: "Users", href: "/dashboard/users", icon: Users },
     { label: "Newsletter", href: "/dashboard/newsletter", icon: Mail },
     { label: "Messages", href: "/dashboard/messages", icon: Mail },
-    { label: "Blog", href: "/dashboard/blog", icon: PenTool },
+    { label: "System", href: "/dashboard/system", icon: Activity },
     { label: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 

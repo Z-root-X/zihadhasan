@@ -18,7 +18,7 @@ const registrationSchema = z.object({
     name: z.string().min(2, "Name is required"),
     email: z.string().email("Invalid email address"),
     phone: z.string().min(10, "Phone number required"),
-    trxId: z.string().min(5, "Transaction ID required"),
+    trxId: z.string().optional(),
 });
 
 type RegistrationFormValues = z.infer<typeof registrationSchema>;
@@ -158,15 +158,32 @@ function EventCard({ event, onRegister, index }: { event: Event, onRegister: () 
 }
 
 function RegistrationModal({ event, open, onOpenChange, onSuccess }: { event: Event | null, open: boolean, onOpenChange: (open: boolean) => void, onSuccess: () => void }) {
+    const isFree = event?.pricingType === 'free';
+
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showSuccess, setShowSuccess] = useState(false);
-    const [paymentInfo, setPaymentInfo] = useState<{ bkash?: string, nagad?: string }>({});
+    const [paymentInfo, setPaymentInfo] = useState<{ bkash?: string, nagad?: string, bankAccounts?: any[] }>({});
 
     const [registrationId, setRegistrationId] = useState<string | null>(null);
 
+    // Dynamic schema validation
+    const formSchema = z.object({
+        name: z.string().min(2, "Name is required"),
+        email: z.string().email("Invalid email address"),
+        phone: z.string().min(10, "Phone number required"),
+        trxId: isFree ? z.string().optional() : z.string().min(5, "Transaction ID required"),
+    });
+
     const { register, handleSubmit, formState: { errors }, reset } = useForm<RegistrationFormValues>({
-        resolver: zodResolver(registrationSchema)
+        // @ts-ignore
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            name: "",
+            email: "",
+            phone: "",
+            trxId: ""
+        }
     });
 
     useEffect(() => {
@@ -176,15 +193,21 @@ function RegistrationModal({ event, open, onOpenChange, onSuccess }: { event: Ev
             setShowSuccess(false);
             setRegistrationId(null);
             // Load payment info
-            CMSService.getGlobalSettings().then(settings => {
-                if (settings?.paymentNumbers) {
-                    setPaymentInfo(settings.paymentNumbers);
-                }
-            });
+            if (!isFree) {
+                CMSService.getGlobalSettings().then(settings => {
+                    if (settings) {
+                        setPaymentInfo({
+                            bkash: settings.paymentNumbers?.bkash,
+                            nagad: settings.paymentNumbers?.nagad,
+                            bankAccounts: settings.bankAccounts
+                        });
+                    }
+                });
+            }
         }
-    }, [open, reset]);
+    }, [open, reset, isFree]);
 
-    const onSubmit = async (data: RegistrationFormValues) => {
+    const onSubmit = async (data: any) => {
         if (!event || !event.id) return;
         setIsLoading(true);
         setError(null);
@@ -227,18 +250,58 @@ function RegistrationModal({ event, open, onOpenChange, onSuccess }: { event: Ev
                             </DialogDescription>
                         </DialogHeader>
 
-                        {/* Payment Instructions */}
-                        <div className="bg-white/5 border border-white/10 p-4 rounded-lg space-y-2 mb-2">
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-pink-400 font-bold">bKash (Send Money):</span>
-                                <span className="font-mono bg-black/30 px-2 py-1 rounded select-all">{paymentInfo.bkash || "Not Set"}</span>
+
+                        {/* Payment Instructions - Only for PAID events */}
+                        {!isFree && (
+                            <div className="bg-white/5 border border-white/10 p-4 rounded-lg space-y-3 mb-2">
+                                <div className="space-y-2">
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-pink-400 font-bold">bKash (Send Money):</span>
+                                        <span className="font-mono bg-black/30 px-2 py-1 rounded select-all">{paymentInfo.bkash || "Not Set"}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-orange-400 font-bold">Nagad (Send Money):</span>
+                                        <span className="font-mono bg-black/30 px-2 py-1 rounded select-all">{paymentInfo.nagad || "Not Set"}</span>
+                                    </div>
+                                </div>
+
+                                {/* Bank Accounts Section */}
+                                {paymentInfo.bankAccounts && paymentInfo.bankAccounts.length > 0 && (
+                                    <div className="pt-2 border-t border-white/5 space-y-2">
+                                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Bank Transfer</p>
+                                        {paymentInfo.bankAccounts.map((bank, idx) => (
+                                            <div key={idx} className="text-xs bg-black/20 p-2 rounded border border-white/5 space-y-1">
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-400">Bank:</span>
+                                                    <span className="text-white font-medium">{bank.bankName}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-400">Account:</span>
+                                                    <span className="text-white font-mono select-all text-right">{bank.accountNumber}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-400">Name:</span>
+                                                    <span className="text-gray-500 text-right">{bank.accountName}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div className="flex justify-between items-center pt-2 border-t border-white/5">
+                                    <span className="text-sm text-gray-400">Ticket Price:</span>
+                                    <span className="text-lg font-bold text-primary">৳{event.price || 0}</span>
+                                </div>
+                                <p className="text-[10px] text-gray-500 mt-2 text-center">* Verification may take 1-2 hours.</p>
                             </div>
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-orange-400 font-bold">Nagad (Send Money):</span>
-                                <span className="font-mono bg-black/30 px-2 py-1 rounded select-all">{paymentInfo.nagad || "Not Set"}</span>
+                        )}
+
+                        {isFree && (
+                            <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-lg mb-4 text-center">
+                                <p className="text-green-400 font-bold">This is a Free Event!</p>
+                                <p className="text-gray-400 text-sm">No payment required. Just fill the form to register.</p>
                             </div>
-                            <p className="text-[10px] text-gray-500 mt-2 text-center">* Verification may take 1-2 hours.</p>
-                        </div>
+                        )}
 
                         <div className="grid gap-4 py-2">
                             <div className="grid gap-2">
@@ -256,11 +319,13 @@ function RegistrationModal({ event, open, onOpenChange, onSuccess }: { event: Ev
                                 <Input id="email" {...register("email")} className="bg-white/5 border-white/10 text-white" />
                                 {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
                             </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="trxId" className="text-white">Transaction ID (TrxID)</Label>
-                                <Input id="trxId" {...register("trxId")} className="bg-white/5 border-white/10 text-white uppercase font-mono tracking-widest" placeholder="9G7..." />
-                                {errors.trxId && <p className="text-xs text-red-500">{errors.trxId.message}</p>}
-                            </div>
+                            {!isFree && (
+                                <div className="grid gap-2">
+                                    <Label htmlFor="trxId" className="text-white">Transaction ID (TrxID)</Label>
+                                    <Input id="trxId" {...register("trxId")} className="bg-white/5 border-white/10 text-white uppercase font-mono tracking-widest" placeholder="9G7..." />
+                                    {errors.trxId && <p className="text-xs text-red-500">{errors.trxId.message}</p>}
+                                </div>
+                            )}
                             {error && (
                                 <div className="p-3 rounded bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
                                     {error}

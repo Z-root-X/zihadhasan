@@ -76,9 +76,27 @@ service cloud.firestore {
 
     match /registrations/{registrationId} {
       // Allow create if user is authenticated, claims their own userId, AND status is pending
+      // OR status is 'approved' IF the associated course/event is FREE.
       allow create: if request.auth != null 
                     && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.status == 'pending';
+                    && (
+                      request.resource.data.status == 'pending' || 
+                      (
+                        request.resource.data.status == 'approved' && 
+                        (
+                          // Option 1: Free Course
+                          (
+                            request.resource.data.courseId != null && 
+                            get(/databases/$(database)/documents/courses/$(request.resource.data.courseId)).data.pricingType == 'free'
+                          ) ||
+                          // Option 2: Free Event
+                          (
+                            request.resource.data.eventId != null && 
+                            get(/databases/$(database)/documents/events/$(request.resource.data.eventId)).data.pricingType == 'free'
+                          )
+                        )
+                      )
+                    );
       
       // Allow read if Admin OR if the user owns the registration
       allow read: if isAdmin() || (request.auth != null && resource.data.userId == request.auth.uid);

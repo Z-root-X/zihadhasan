@@ -23,6 +23,8 @@ export interface Event {
     title: string;
     description: string;
     date: Timestamp;
+    pricingType?: 'free' | 'paid';
+    price?: number;
     location: string;
     totalSeats: number;
     registeredCount: number;
@@ -115,6 +117,13 @@ export interface GlobalSettings {
         bkash?: string;
         nagad?: string;
     };
+    bankAccounts?: {
+        bankName: string;
+        accountName: string;
+        accountNumber: string;
+        branch: string;
+        routingNo: string;
+    }[];
 
     // Social Media
     socials?: SocialLink[];
@@ -154,7 +163,9 @@ export interface Course {
     id?: string;
     title: string;
     description: string;
-    price: number;
+    pricingType?: 'free' | 'paid';
+    price?: number;
+    isSequential?: boolean;
     headerImage?: string;
     published: boolean;
     lessons: Lesson[];
@@ -343,10 +354,18 @@ export const CMSService = {
                 // IMPORTANT: We do NOT increment registeredCount yet.
                 // Count is incremented ONLY when Admin approves the registration.
 
+                // Auto-approve if Free
+                let status: "pending" | "approved" = "pending";
+                if (eventData.pricingType === 'free') {
+                    status = "approved";
+                    // If approved immediately, we SHOULD increment count now
+                    transaction.update(eventRef, { registeredCount: (currentRegistered || 0) + 1 });
+                }
+
                 transaction.set(registrationRef, {
                     eventId,
                     ...userDetails,
-                    status: "pending", // Default to pending
+                    status: status,
                     registeredAt: Timestamp.now(),
                 });
             });
@@ -661,10 +680,22 @@ export const CMSService = {
             const existing = await getDocs(q);
             if (!existing.empty) return { success: false, error: "Already registered for this course" };
 
+            // Fetch course to check pricing
+            const courseRef = doc(db, "courses", courseId);
+            const courseDoc = await getDoc(courseRef);
+            let status: "pending" | "approved" = "pending";
+
+            if (courseDoc.exists()) {
+                const courseData = courseDoc.data() as Course;
+                if (courseData.pricingType === 'free') {
+                    status = "approved";
+                }
+            }
+
             await setDoc(registrationRef, {
                 courseId,
                 ...userDetails,
-                status: "pending", // Default to pending for verification
+                status: status,
                 registeredAt: Timestamp.now()
             });
             return { success: true, id: registrationRef.id };

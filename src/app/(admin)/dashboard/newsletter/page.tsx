@@ -19,6 +19,9 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { GlassCard } from "@/components/shared/glass-card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function NewsletterPage() {
     const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
@@ -124,7 +127,7 @@ export default function NewsletterPage() {
                     <p className="text-muted-foreground">Manage your audience, clean up lists, and track growth.</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button onClick={handleExport} variant="outline" className="text-primary border-primary/20 hover:bg-primary/10">
+                    <Button onClick={handleExport} variant="outline" className="border-white/10 text-white hover:bg-white/10">
                         <Download className="mr-2 h-4 w-4" /> Export CSV
                     </Button>
                 </div>
@@ -132,103 +135,121 @@ export default function NewsletterPage() {
 
             {/* Stats & Search Bar */}
             <div className="grid gap-6 md:grid-cols-4">
-                <div className="md:col-span-1 rounded-xl border border-white/10 bg-gradient-to-br from-primary/10 to-transparent p-6">
-                    <div className="flex items-center gap-4 mb-4">
-                        <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center text-primary border border-primary/20">
-                            <Users className="h-5 w-5" />
-                        </div>
-                        <div>
-                            <p className="text-xs font-medium text-gray-400">Total Subscribers</p>
-                            <h3 className="text-2xl font-bold text-white">{subscribers.length}</h3>
-                        </div>
+                <GlassCard className="md:col-span-1 p-6 flex flex-col justify-between relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <Users className="w-16 h-16 text-primary" />
                     </div>
-                </div>
+                    <div>
+                        <p className="text-sm font-medium text-gray-400">Total Subscribers</p>
+                        <h3 className="text-3xl font-bold text-white mt-1">{subscribers.length}</h3>
+                    </div>
+                    <div className="mt-4 flex items-center text-xs text-primary">
+                        <span className="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse"></span>
+                        Active Audience
+                    </div>
+                </GlassCard>
 
-                <div className="md:col-span-3 flex flex-col sm:flex-row gap-4">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-                        <Input
-                            placeholder="Search by email or name..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9 bg-white/5 border-white/10 text-white"
-                        />
-                    </div>
-                    <div className="relative w-full sm:w-auto">
-                        {/* Native Date Picker is simplest for Admin Panel */}
-                        <div className="relative">
-                            <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+                <div className="md:col-span-3 flex flex-col gap-4">
+                    {/* Search & Filter Toolbar */}
+                    <div className="bg-white/5 p-4 rounded-xl border border-white/10 flex flex-col sm:flex-row gap-4 items-center">
+                        <div className="relative flex-1 w-full">
+                            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
-                                type="date"
-                                value={dateFilter}
-                                onChange={(e) => setDateFilter(e.target.value)}
-                                className="pl-9 bg-white/5 border-white/10 text-white w-full sm:w-[180px] [color-scheme:dark]"
+                                placeholder="Search by email or name..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-9 bg-black/20 border-white/10 text-white focus:border-primary/50 transition-colors"
                             />
                         </div>
-                        {dateFilter && (
-                            <button
-                                onClick={() => setDateFilter("")}
-                                className="absolute -right-2 -top-2 bg-red-500 text-white rounded-full p-0.5"
-                            >
-                                <X className="h-3 w-3" />
-                            </button>
-                        )}
+                        <div className="relative w-full sm:w-auto">
+                            <div className="relative">
+                                <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    type="date"
+                                    value={dateFilter}
+                                    onChange={(e) => setDateFilter(e.target.value)}
+                                    className="pl-9 bg-black/20 border-white/10 text-white w-full sm:w-[180px] [color-scheme:dark]"
+                                />
+                            </div>
+                            {dateFilter && (
+                                <button
+                                    onClick={() => setDateFilter("")}
+                                    className="absolute -right-2 -top-2 bg-red-500 text-white rounded-full p-0.5 shadow-lg hover:bg-red-600 transition-colors"
+                                >
+                                    <X className="h-3 w-3" />
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* Main List */}
-            <div className="rounded-xl border border-white/10 bg-white/5 overflow-hidden min-h-[400px]">
-                <div className="border-b border-white/10 px-6 py-4 flex items-center justify-between bg-white/5">
+            <GlassCard className="overflow-hidden">
+                <div className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
                     <h3 className="font-semibold text-white">Subscribers List</h3>
-                    <span className="text-xs text-muted-foreground">Showing {filteredSubscribers.length} results</span>
+                    <Badge variant="outline" className="border-white/10 text-gray-400">{filteredSubscribers.length} Records</Badge>
                 </div>
 
-                {loading ? (
-                    <div className="p-12 flex justify-center">
-                        <Loader2 className="animate-spin text-primary h-6 w-6" />
-                    </div>
-                ) : filteredSubscribers.length > 0 ? (
-                    <div className="divide-y divide-white/10">
-                        {filteredSubscribers.map((sub, i) => (
-                            <div key={sub.id || i} className="group flex flex-col sm:flex-row items-start sm:items-center justify-between px-6 py-4 hover:bg-white/5 transition-colors gap-4">
-                                <div className="flex items-center gap-4 min-w-0">
-                                    <div className="h-10 w-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 shrink-0">
-                                        <Mail className="h-5 w-5" />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <p className="text-sm font-medium text-white truncate">{sub.email}</p>
-                                            {sub.name && <Badge variant="secondary" className="text-[10px] h-5 bg-white/10 text-gray-300">{sub.name}</Badge>}
+                <Table>
+                    <TableHeader className="bg-white/5">
+                        <TableRow className="border-white/10 hover:bg-white/5">
+                            <TableHead className="text-gray-300">Subscriber</TableHead>
+                            <TableHead className="text-gray-300">Joined Date</TableHead>
+                            <TableHead className="text-right text-gray-300">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {loading ? (
+                            <TableRow>
+                                <TableCell colSpan={3} className="text-center py-12">
+                                    <Loader2 className="animate-spin text-primary h-8 w-8 mx-auto" />
+                                </TableCell>
+                            </TableRow>
+                        ) : filteredSubscribers.length > 0 ? (
+                            filteredSubscribers.map((sub) => (
+                                <TableRow key={sub.id} className="border-white/10 hover:bg-white/5 group">
+                                    <TableCell>
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                                                <Mail className="h-4 w-4" />
+                                            </div>
+                                            <div>
+                                                <div className="font-medium text-white">{sub.email}</div>
+                                                {sub.name && <div className="text-xs text-gray-500">{sub.name}</div>}
+                                            </div>
                                         </div>
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            Joined: {sub.joinedAt && new Date(sub.joinedAt.seconds * 1000).toLocaleDateString(undefined, { dateStyle: 'medium' })}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity sm:self-center self-end">
-                                    <Button size="sm" variant="ghost" onClick={() => startEdit(sub)} className="h-8 w-8 p-0 text-gray-400 hover:text-white">
-                                        <Pencil className="h-4 w-4" />
-                                    </Button>
-                                    <Button size="sm" variant="ghost" onClick={() => sub.id && setDeletingId(sub.id)} className="h-8 w-8 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10">
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-                        <Users className="h-10 w-10 mb-4 opacity-50" />
-                        <p>No subscribers found matching your criteria.</p>
-                    </div>
-                )}
-            </div>
+                                    </TableCell>
+                                    <TableCell className="text-gray-400 text-sm">
+                                        {sub.joinedAt && new Date(sub.joinedAt.seconds * 1000).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Button size="icon" variant="ghost" onClick={() => startEdit(sub)} className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-blue-500/20">
+                                                <Pencil className="h-4 w-4" />
+                                            </Button>
+                                            <Button size="icon" variant="ghost" onClick={() => sub.id && setDeletingId(sub.id)} className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/20">
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={3} className="text-center py-16 text-gray-500">
+                                    <Users className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                                    No subscribers found.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </GlassCard>
 
             {/* Edit Dialog */}
             <Dialog open={!!editingSubscriber} onOpenChange={(open) => !open && setEditingSubscriber(null)}>
-                <DialogContent className="bg-black/90 border-white/10 text-white sm:max-w-[425px]">
+                <DialogContent className="bg-zinc-950 border-white/10 text-white sm:max-w-[425px]">
                     <DialogHeader>
                         <DialogTitle>Edit Subscriber</DialogTitle>
                         <DialogDescription className="text-gray-400">
@@ -247,7 +268,7 @@ export default function NewsletterPage() {
                     </div>
                     <DialogFooter>
                         <Button variant="ghost" onClick={() => setEditingSubscriber(null)}>Cancel</Button>
-                        <Button onClick={saveEdit} disabled={isSaving} className="bg-primary text-black">
+                        <Button onClick={saveEdit} disabled={isSaving} className="bg-primary text-black hover:bg-primary/90">
                             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Save Changes
                         </Button>
@@ -257,7 +278,7 @@ export default function NewsletterPage() {
 
             {/* Delete Confirmation */}
             <AlertDialog open={!!deletingId} onOpenChange={(open) => !open && setDeletingId(null)}>
-                <AlertDialogContent className="bg-black/90 border-white/10 text-white">
+                <AlertDialogContent className="bg-zinc-950 border-white/10 text-white">
                     <AlertDialogHeader>
                         <AlertDialogTitle>Delete Subscriber?</AlertDialogTitle>
                         <AlertDialogDescription className="text-gray-400">
@@ -266,7 +287,7 @@ export default function NewsletterPage() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel className="bg-transparent border-white/10 text-white hover:bg-white/10 hover:text-white">Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDelete} className="bg-red-500 text-white hover:bg-red-600">Delete</AlertDialogAction>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-red-600 text-white hover:bg-red-700">Delete</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

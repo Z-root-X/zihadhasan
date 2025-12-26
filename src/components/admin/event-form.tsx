@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Loader2, Calendar as CalendarIcon, MapPin, Users, Globe } from "lucide-react";
+import { Loader2, Calendar as CalendarIcon, MapPin, Users, Globe, Coins } from "lucide-react";
 import { Event } from "@/lib/cms-service";
 import { Timestamp } from "firebase/firestore";
 
@@ -21,7 +21,8 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch"; // Ensure this component exists from Week 1
+import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const eventSchema = z.object({
     title: z.string().min(2, "Title is required"),
@@ -33,6 +34,8 @@ const eventSchema = z.object({
     totalSeats: z.number().min(1, "Must have at least 1 seat"),
     isVirtual: z.boolean(),
     imageUrl: z.string().url().optional().or(z.literal("")),
+    pricingType: z.enum(["free", "paid"]).optional(),
+    price: z.number().optional()
 });
 
 type EventFormValues = z.infer<typeof eventSchema>;
@@ -46,7 +49,9 @@ interface EventFormProps {
 
 export function EventForm({ open, onOpenChange, onSubmit, initialData }: EventFormProps) {
     const [submitting, setSubmitting] = useState(false);
-    const [imageError, setImageError] = useState(false);
+
+    // Derived value for default pricing to avoid errors
+    const defaultPricingType = initialData?.pricingType || "free";
 
     const form = useForm<EventFormValues>({
         resolver: zodResolver(eventSchema),
@@ -58,6 +63,8 @@ export function EventForm({ open, onOpenChange, onSubmit, initialData }: EventFo
             totalSeats: 50,
             isVirtual: false,
             imageUrl: "",
+            pricingType: "free",
+            price: 0
         },
         values: initialData ? {
             title: initialData.title,
@@ -68,10 +75,12 @@ export function EventForm({ open, onOpenChange, onSubmit, initialData }: EventFo
             totalSeats: initialData.totalSeats,
             isVirtual: initialData.isVirtual,
             imageUrl: initialData.imageUrl || "",
+            pricingType: initialData.pricingType || "free",
+            price: initialData.price || 0
         } : undefined
     });
 
-    const imageUrl = form.watch("imageUrl");
+    const pricingType = form.watch("pricingType");
 
     const handleSubmit = async (values: EventFormValues) => {
         setSubmitting(true);
@@ -85,6 +94,8 @@ export function EventForm({ open, onOpenChange, onSubmit, initialData }: EventFo
                 totalSeats: values.totalSeats,
                 isVirtual: values.isVirtual,
                 imageUrl: values.imageUrl,
+                pricingType: values.pricingType,
+                price: values.pricingType === 'free' ? 0 : values.price || 0
             });
             form.reset();
             onOpenChange(false);
@@ -168,6 +179,44 @@ export function EventForm({ open, onOpenChange, onSubmit, initialData }: EventFo
                             />
                         </div>
                         {form.formState.errors.location && <p className="text-xs text-red-500">{form.formState.errors.location.message}</p>}
+                    </div>
+
+                    {/* Pricing Section */}
+                    <div className="space-y-3 p-4 border border-white/10 rounded-lg bg-white/5">
+                        <Label className="text-white flex items-center gap-2">
+                            <Coins className="h-4 w-4 text-primary" /> Pricing
+                        </Label>
+
+                        <div className="flex flex-col space-y-3">
+                            <RadioGroup
+                                value={pricingType}
+                                onValueChange={(v) => form.setValue("pricingType", v as "free" | "paid")}
+                                className="flex space-x-4"
+                            >
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="free" id="evt-free" className="border-white/20 text-primary" />
+                                    <Label htmlFor="evt-free" className="text-sm font-normal cursor-pointer text-white">Free Event</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="paid" id="evt-paid" className="border-white/20 text-primary" />
+                                    <Label htmlFor="evt-paid" className="text-sm font-normal cursor-pointer text-white">Paid Event</Label>
+                                </div>
+                            </RadioGroup>
+
+                            {pricingType === 'paid' && (
+                                <div className="grid gap-2 animate-in fade-in slide-in-from-top-2">
+                                    <Label htmlFor="price" className="text-white">Ticket Price (BDT)</Label>
+                                    <Input
+                                        id="price"
+                                        type="number"
+                                        {...form.register("price", { valueAsNumber: true })}
+                                        className="bg-black/50 border-white/10 text-white"
+                                        placeholder="e.g. 500"
+                                    />
+                                    {form.formState.errors.price && <p className="text-xs text-red-500">{form.formState.errors.price.message}</p>}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     <div className="grid gap-2">

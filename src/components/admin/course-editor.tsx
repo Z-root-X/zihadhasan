@@ -22,6 +22,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export interface Lesson {
     id: string;
@@ -34,7 +35,8 @@ export interface Course {
     id?: string;
     title: string;
     description: string;
-    price: number;
+    pricingType?: 'free' | 'paid';
+    price?: number;
     headerImage: string;
     published: boolean;
     lessons: Lesson[];
@@ -50,6 +52,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
     const [loading, setLoading] = useState(false);
     const [title, setTitle] = useState(course?.title || "");
     const [description, setDescription] = useState(course?.description || "");
+    const [pricingType, setPricingType] = useState<'free' | 'paid'>(course?.pricingType || 'free');
     const [price, setPrice] = useState(course?.price || 0);
     const [headerImage, setHeaderImage] = useState(course?.headerImage || "");
     const [published, setPublished] = useState(course?.published || false);
@@ -76,6 +79,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
             const draftData = {
                 title,
                 description,
+                pricingType,
                 price,
                 headerImage,
                 published,
@@ -87,7 +91,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
 
         const interval = setInterval(saveDraft, 15000);
         return () => clearInterval(interval);
-    }, [title, description, price, headerImage, published, lessons, course]);
+    }, [title, description, pricingType, price, headerImage, published, lessons, course]);
 
     // Check Draft on Mount
     useEffect(() => {
@@ -109,6 +113,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
         if (draftToRestore) {
             setTitle(draftToRestore.title || "");
             setDescription(draftToRestore.description || "");
+            setPricingType(draftToRestore.pricingType || 'free');
             setPrice(draftToRestore.price || 0);
             setHeaderImage(draftToRestore.headerImage || "");
             setPublished(draftToRestore.published || false);
@@ -148,7 +153,8 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
         const courseData = {
             title,
             description,
-            price: Number(price),
+            pricingType,
+            price: pricingType === 'free' ? 0 : Number(price),
             headerImage,
             published,
             lessons,
@@ -288,21 +294,44 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
                         <CardHeader>
                             <CardTitle>Settings</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent className="space-y-6">
                             <div className="flex items-center justify-between">
                                 <Label>Published</Label>
                                 <Switch checked={published} onCheckedChange={setPublished} />
                             </div>
-                            <div className="space-y-2">
-                                <Label>Price (BDT)</Label>
-                                <Input
-                                    type="number"
-                                    value={price}
-                                    onChange={e => setPrice(Number(e.target.value))}
-                                    className="bg-black/20 border-white/10 text-white"
-                                />
+
+                            <div className="space-y-3">
+                                <Label>Pricing</Label>
+                                <RadioGroup
+                                    value={pricingType}
+                                    onValueChange={(v: 'free' | 'paid') => setPricingType(v)}
+                                    className="flex flex-col gap-2"
+                                >
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="free" id="r-free" className="border-white/20 text-primary" />
+                                        <Label htmlFor="r-free" className="text-sm font-normal cursor-pointer">Free Course</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="paid" id="r-paid" className="border-white/20 text-primary" />
+                                        <Label htmlFor="r-paid" className="text-sm font-normal cursor-pointer">Paid Course</Label>
+                                    </div>
+                                </RadioGroup>
                             </div>
-                            <div className="space-y-2">
+
+                            {pricingType === 'paid' && (
+                                <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                                    <Label>Price (BDT)</Label>
+                                    <Input
+                                        type="number"
+                                        value={price}
+                                        onChange={e => setPrice(Number(e.target.value))}
+                                        className="bg-black/20 border-white/10 text-white"
+                                        placeholder="e.g. 5000"
+                                    />
+                                </div>
+                            )}
+
+                            <div className="space-y-2 pt-2 border-t border-white/10">
                                 <ImageUploader
                                     label="Course Header Image"
                                     value={headerImage}

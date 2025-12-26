@@ -288,26 +288,21 @@ export default function RegistrationsPage() {
             </div>
 
             {/* Filters */}
+            {/* Filters */}
             <div className="flex flex-col md:flex-row gap-6">
                 <div className="flex-1 bg-white/5 p-1 rounded-lg border border-white/10 flex">
-                    <button
-                        onClick={() => setSelectedStatus("all")}
-                        className={`flex-1 text-sm font-medium py-2 rounded-md transition-all ${selectedStatus === 'all' ? 'bg-white/10 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
-                    >
-                        All
-                    </button>
-                    <button
-                        onClick={() => setSelectedStatus("pending")}
-                        className={`flex-1 text-sm font-medium py-2 rounded-md transition-all ${selectedStatus === 'pending' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/20 shadow-sm' : 'text-gray-400 hover:text-amber-400'}`}
-                    >
-                        Pending
-                    </button>
-                    <button
-                        onClick={() => setSelectedStatus("approved")}
-                        className={`flex-1 text-sm font-medium py-2 rounded-md transition-all ${selectedStatus === 'approved' ? 'bg-green-500/20 text-green-400 border border-green-500/20 shadow-sm' : 'text-gray-400 hover:text-green-400'}`}
-                    >
-                        Approved
-                    </button>
+                    {["all", "pending", "approved"].map((status) => (
+                        <button
+                            key={status}
+                            onClick={() => setSelectedStatus(status)}
+                            className={`flex-1 text-sm font-medium py-2.5 rounded-md transition-all capitalize ${selectedStatus === status
+                                ? 'bg-primary/20 text-primary shadow-sm border border-primary/20'
+                                : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                }`}
+                        >
+                            {status}
+                        </button>
+                    ))}
                 </div>
 
                 <div className="flex gap-4 flex-1">
@@ -413,7 +408,9 @@ export default function RegistrationsPage() {
                                                             {reg.trxId}
                                                         </Badge>
                                                     ) : (
-                                                        <span className="text-xs text-gray-500 italic">Free / No TrxID</span>
+                                                        <Badge variant="outline" className="border-green-500/50 text-green-400 bg-green-500/10 w-fit">
+                                                            FREE
+                                                        </Badge>
                                                     )}
                                                     {reg.paymentMethod && <span className="text-xs text-gray-400 capitalize">{reg.paymentMethod}</span>}
                                                     {reg.phone && <span className="text-xs text-gray-500">{reg.phone}</span>}

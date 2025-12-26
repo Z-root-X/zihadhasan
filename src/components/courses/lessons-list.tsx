@@ -38,86 +38,81 @@ export function LessonsList({ course, registration, className, onEnroll, onToggl
                 Course Content
             </h2>
 
-            <div className="space-y-3">
+            <div className="space-y-1">
                 {course.lessons && course.lessons.length > 0 ? (
                     course.lessons.map((lesson, index) => {
-                        const isUnlocked = lesson.isFreePreview || isApproved;
                         const isCompleted = completedIds.includes(lesson.id);
+
+                        // Sequential Logic: 
+                        // If course.isSequential is true, a lesson is unlocked ONLY if:
+                        // 1. It is a free preview OR
+                        // 2. Previous lesson is completed OR
+                        // 3. It is the first lesson
+                        let isUnlocked = lesson.isFreePreview || isApproved;
+
+                        if (course.isSequential && isApproved && index > 0) {
+                            const prevLessonId = course.lessons[index - 1].id;
+                            if (!completedIds.includes(prevLessonId)) {
+                                isUnlocked = false;
+                            }
+                        }
+
+                        // Determine visual state
+                        const isSelected = selectedLesson?.id === lesson.id;
 
                         return (
                             <div
                                 key={lesson.id || index}
+                                onClick={() => handleLessonClick(lesson)}
                                 className={cn(
-                                    "group flex items-center justify-between p-4 rounded-xl border transition-all duration-300",
-                                    isUnlocked
-                                        ? "bg-white/5 border-white/10 hover:bg-white/10"
-                                        : "bg-black/20 border-white/5 opacity-70 hover:border-primary/30"
+                                    "group flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 cursor-pointer",
+                                    isSelected
+                                        ? "bg-primary/20 border-primary/50"
+                                        : (isUnlocked
+                                            ? "bg-transparent border-transparent hover:bg-white/5"
+                                            : "bg-transparent border-transparent opacity-50 cursor-not-allowed")
                                 )}
                             >
-                                <div className="flex items-center gap-4 flex-1">
-                                    {/* Play Button / Click Area */}
-                                    <div
-                                        className={cn(
-                                            "h-10 w-10 rounded-full flex items-center justify-center shrink-0 cursor-pointer",
-                                            isUnlocked
-                                                ? isCompleted ? "bg-green-500/20 text-green-500" : "bg-primary/20 text-primary group-hover:bg-primary group-hover:text-white transition-colors"
-                                                : "bg-white/5 text-gray-500"
-                                        )}
-                                        onClick={() => handleLessonClick(lesson)}
-                                    >
-                                        {isUnlocked ? (
-                                            isCompleted ? <CheckCircle className="h-5 w-5" /> : <PlayCircle className="h-5 w-5" />
-                                        ) : (
-                                            <Lock className="h-5 w-5" />
-                                        )}
-                                    </div>
-
-                                    <div className="flex-1 cursor-pointer" onClick={() => handleLessonClick(lesson)}>
-                                        <h3 className={cn(
-                                            "font-medium text-lg transition-colors",
-                                            isCompleted ? "text-green-400 line-through decoration-green-500/50" : (isUnlocked ? "text-gray-200 group-hover:text-white" : "text-gray-500")
-                                        )}>
-                                            {index + 1}. {lesson.title}
-                                        </h3>
-                                        <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
-                                            {lesson.duration && <span>{lesson.duration}</span>}
-                                            {lesson.isFreePreview && (
-                                                <span className="text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">
-                                                    Free Preview
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
+                                {/* Status Icon */}
+                                <div className={cn(
+                                    "shrink-0 h-6 w-6 rounded-full flex items-center justify-center border",
+                                    isCompleted
+                                        ? "bg-green-500 text-white border-green-500"
+                                        : (isUnlocked
+                                            ? "border-gray-500 text-gray-400 group-hover:border-primary group-hover:text-primary"
+                                            : "border-gray-700 text-gray-700 bg-gray-900/50")
+                                )}>
+                                    {isCompleted ? (
+                                        <CheckCircle className="h-4 w-4" />
+                                    ) : !isUnlocked ? (
+                                        <Lock className="h-3 w-3" />
+                                    ) : (
+                                        <div className="h-2 w-2 rounded-full bg-current" />
+                                    )}
                                 </div>
 
-                                {isUnlocked && isApproved && (
-                                    <div className="flex items-center gap-2">
-                                        {/* Toggle Completion Button */}
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onToggleLesson?.(lesson.id, !isCompleted);
-                                            }}
-                                            className={cn(
-                                                "h-8 w-8 p-0 rounded-full",
-                                                isCompleted
-                                                    ? "text-green-500 hover:text-green-400 hover:bg-green-500/10"
-                                                    : "text-gray-500 hover:text-white hover:bg-white/10"
-                                            )}
-                                            title={isCompleted ? "Mark as incomplete" : "Mark as complete"}
-                                        >
-                                            <CheckCircle className={cn("h-5 w-5", isCompleted && "fill-current")} />
-                                        </Button>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className={cn(
+                                        "text-sm font-medium truncate",
+                                        isSelected ? "text-primary" : (isUnlocked ? "text-gray-200 group-hover:text-white" : "text-gray-500")
+                                    )}>
+                                        {index + 1}. {lesson.title}
+                                    </h3>
+                                    <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                                        {lesson.duration && <span>{lesson.duration}</span>}
+                                        {lesson.isFreePreview && (
+                                            <span className="text-green-400 bg-green-500/10 px-1.5 rounded text-[10px]">
+                                                Free
+                                            </span>
+                                        )}
                                     </div>
-                                )}
+                                </div>
                             </div>
                         );
                     })
                 ) : (
-                    <div className="text-center py-8 text-gray-500 bg-white/5 rounded-xl border border-white/5">
-                        No lessons available yet.
+                    <div className="text-center py-8 text-gray-500">
+                        No lessons available.
                     </div>
                 )}
 

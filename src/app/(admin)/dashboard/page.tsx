@@ -234,6 +234,12 @@ export default function DashboardPage() {
                                 </div>
                                 <span className="text-xs font-medium text-white group-hover:text-primary">LMS</span>
                             </Link>
+                            <Link href="/dashboard/system" className="group flex flex-col items-center justify-center gap-3 rounded-xl border border-white/5 bg-white/5 p-6 transition-all hover:bg-white/10 hover:border-primary/50 text-center">
+                                <div className="h-10 w-10 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform">
+                                    <Activity className="h-5 w-5" />
+                                </div>
+                                <span className="text-xs font-medium text-white group-hover:text-primary">System</span>
+                            </Link>
                         </div>
                     </GlassCard>
 

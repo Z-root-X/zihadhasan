@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { CMSService } from "@/lib/cms-service";
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Loader2, CreditCard } from "lucide-react";
+import { Loader2, CreditCard, Plus, Trash2, Building } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { ImageUploader } from "@/components/admin/image-uploader";
@@ -41,6 +41,13 @@ const settingsSchema = z.object({
     socialEmail: z.string().email("Invalid email").optional().or(z.literal("")),
     paymentBkash: z.string().regex(bdPhoneRegex, "Invalid BD Number (e.g. 017...)").optional().or(z.literal("")),
     paymentNagad: z.string().regex(bdPhoneRegex, "Invalid BD Number (e.g. 017...)").optional().or(z.literal("")),
+    bankAccounts: z.array(z.object({
+        bankName: z.string().min(1, "Bank Name is required"),
+        accountName: z.string().min(1, "Account Name is required"),
+        accountNumber: z.string().min(1, "Account Number is required"),
+        branch: z.string().optional(),
+        routingNo: z.string().optional(),
+    })).optional()
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -58,6 +65,7 @@ export default function SettingsPage() {
             showEvents: true,
             paymentBkash: "",
             paymentNagad: "",
+            bankAccounts: [],
             seoKeywords: "",
             heroImage: "",
             siteLogo: "",
@@ -70,6 +78,11 @@ export default function SettingsPage() {
             socialInstagram: "",
             socialEmail: ""
         }
+    });
+
+    const { fields, append, remove } = useFieldArray({
+        control: form.control,
+        name: "bankAccounts"
     });
 
     useEffect(() => {
@@ -92,6 +105,7 @@ export default function SettingsPage() {
                         showEvents: data.features?.showEvents ?? true,
                         paymentBkash: data.paymentNumbers?.bkash || "",
                         paymentNagad: data.paymentNumbers?.nagad || "",
+                        bankAccounts: data.bankAccounts || [],
                         socialGithub: data.socials?.find(s => s.platform === "github")?.url || "",
                         socialLinkedin: data.socials?.find(s => s.platform === "linkedin")?.url || "",
                         socialTwitter: data.socials?.find(s => s.platform === "twitter")?.url || "",
@@ -132,6 +146,11 @@ export default function SettingsPage() {
                     bkash: values.paymentBkash,
                     nagad: values.paymentNagad
                 },
+                bankAccounts: values.bankAccounts?.map(b => ({
+                    ...b,
+                    branch: b.branch || "",
+                    routingNo: b.routingNo || ""
+                })),
                 socials: [
                     values.socialGithub && { platform: "github", url: values.socialGithub },
                     values.socialLinkedin && { platform: "linkedin", url: values.socialLinkedin },
@@ -372,28 +391,107 @@ export default function SettingsPage() {
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-white/5 border-white/10 backdrop-blur-md">
+                    <Card className="bg-white/5 border-white/10 backdrop-blur-md md:col-span-2">
                         <CardHeader>
                             <CardTitle className="text-white flex items-center gap-2">
                                 <CreditCard className="h-5 w-5 text-primary" />
                                 Payment Configuration
                             </CardTitle>
-                            <CardDescription>Set numbers for Event Registration payments.</CardDescription>
+                            <CardDescription>Setup Mobile Banking and Bank Account details for students to pay.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="paymentBkash" className="text-pink-500 font-semibold">bKash Number</Label>
-                                <Input id="paymentBkash" {...form.register("paymentBkash")} className="bg-black/40 border-white/10 text-white" placeholder="017..." />
-                                {form.formState.errors.paymentBkash && (
-                                    <p className="text-xs text-red-400">{form.formState.errors.paymentBkash.message}</p>
-                                )}
+                        <CardContent className="space-y-8">
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="paymentBkash" className="text-pink-500 font-semibold">bKash Number</Label>
+                                    <Input id="paymentBkash" {...form.register("paymentBkash")} className="bg-black/40 border-white/10 text-white" placeholder="017..." />
+                                    {form.formState.errors.paymentBkash && (
+                                        <p className="text-xs text-red-400">{form.formState.errors.paymentBkash.message}</p>
+                                    )}
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="paymentNagad" className="text-orange-500 font-semibold">Nagad Number</Label>
+                                    <Input id="paymentNagad" {...form.register("paymentNagad")} className="bg-black/40 border-white/10 text-white" placeholder="017..." />
+                                    {form.formState.errors.paymentNagad && (
+                                        <p className="text-xs text-red-400">{form.formState.errors.paymentNagad.message}</p>
+                                    )}
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="paymentNagad" className="text-orange-500 font-semibold">Nagad Number</Label>
-                                <Input id="paymentNagad" {...form.register("paymentNagad")} className="bg-black/40 border-white/10 text-white" placeholder="017..." />
-                                {form.formState.errors.paymentNagad && (
-                                    <p className="text-xs text-red-400">{form.formState.errors.paymentNagad.message}</p>
-                                )}
+
+                            <Separator className="bg-white/10" />
+
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="space-y-1">
+                                        <Label className="text-base text-white flex items-center gap-2">
+                                            <Building className="h-4 w-4" /> Bank Accounts
+                                        </Label>
+                                        <p className="text-xs text-muted-foreground">Students see these when enrolling in Paid courses.</p>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="border-white/10 hover:bg-white/10 text-primary hover:text-primary"
+                                        onClick={() => append({ bankName: "", accountName: "", accountNumber: "", branch: "", routingNo: "" })}
+                                    >
+                                        <Plus className="h-4 w-4 mr-2" /> Add Account
+                                    </Button>
+                                </div>
+
+                                <div className="grid gap-4">
+                                    {fields.length === 0 && (
+                                        <div className="text-center p-8 border border-dashed border-white/10 rounded-lg text-muted-foreground text-sm">
+                                            No bank accounts added yet.
+                                        </div>
+                                    )}
+                                    {fields.map((field, index) => (
+                                        <div key={field.id} className="grid gap-4 p-4 rounded-lg border border-white/10 bg-black/20 relative group">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                className="absolute top-2 right-2 h-6 w-6 text-muted-foreground hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                onClick={() => remove(index)}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+
+                                            <div className="grid md:grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-xs text-muted-foreground">Bank Name</Label>
+                                                    <Input {...form.register(`bankAccounts.${index}.bankName`)} className="bg-black/40 border-white/10 text-white h-8 text-sm" placeholder="e.g. Dutch Bangla Bank" />
+                                                    {form.formState.errors.bankAccounts?.[index]?.bankName && (
+                                                        <p className="text-xs text-red-400">{form.formState.errors.bankAccounts[index]?.bankName?.message}</p>
+                                                    )}
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-xs text-muted-foreground">Account Name</Label>
+                                                    <Input {...form.register(`bankAccounts.${index}.accountName`)} className="bg-black/40 border-white/10 text-white h-8 text-sm" placeholder="e.g. Zihad Hasan" />
+                                                    {form.formState.errors.bankAccounts?.[index]?.accountName && (
+                                                        <p className="text-xs text-red-400">{form.formState.errors.bankAccounts[index]?.accountName?.message}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="grid md:grid-cols-3 gap-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-xs text-muted-foreground">Account Number</Label>
+                                                    <Input {...form.register(`bankAccounts.${index}.accountNumber`)} className="bg-black/40 border-white/10 text-white h-8 text-sm" placeholder="e.g. 192..." />
+                                                    {form.formState.errors.bankAccounts?.[index]?.accountNumber && (
+                                                        <p className="text-xs text-red-400">{form.formState.errors.bankAccounts[index]?.accountNumber?.message}</p>
+                                                    )}
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-xs text-muted-foreground">Branch (Optional)</Label>
+                                                    <Input {...form.register(`bankAccounts.${index}.branch`)} className="bg-black/40 border-white/10 text-white h-8 text-sm" />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-xs text-muted-foreground">Routing No (Optional)</Label>
+                                                    <Input {...form.register(`bankAccounts.${index}.routingNo`)} className="bg-black/40 border-white/10 text-white h-8 text-sm" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
