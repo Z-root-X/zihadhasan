@@ -51,7 +51,15 @@ service cloud.firestore {
 
     match /events/{docId} {
       allow read: if true;
+      // Admin can do anything
       allow write: if isAdmin();
+      
+      // Special Case: Allow authenticated users to increment 'registeredCount' for FREE events
+      // This is required because the client-side transaction updates the event doc directly.
+      allow update: if request.auth != null
+                    && resource.data.pricingType == 'free'
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['registeredCount'])
+                    && request.resource.data.registeredCount == resource.data.registeredCount + 1;
     }
     
     match /projects/{docId} {
