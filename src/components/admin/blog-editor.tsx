@@ -134,6 +134,25 @@ export function BlogEditor({ initialData, localStorageKey = 'blog_draft_new' }: 
         if (!editor) return;
         setSubmitting(true);
 
+        // Check Slug Uniqueness
+        if (!initialData || initialData.slug !== slug) {
+            try {
+                const exists = await CMSService.checkSlug(slug, "posts");
+                if (exists) {
+                    toast.error("Slug already exists. Please choose a unique URL.");
+                    setSubmitting(false);
+                    return;
+                }
+            } catch (err) {
+                console.error("Slug check failed", err);
+                // Optional: fail open or closed? Closed is safer but annoying if network fails.
+                // We'll warn but allow save maybe? No, let's fail to be safe, user can retry.
+                toast.error("Failed to verify slug uniqueness. Please try again.");
+                setSubmitting(false);
+                return;
+            }
+        }
+
         const postData = {
             slug,
             title,

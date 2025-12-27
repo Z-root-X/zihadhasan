@@ -78,7 +78,7 @@ export function CourseTeaser({ courses }: CourseTeaserProps) {
                                     </span>
                                 </div>
                             </div>
-                            <Link href="/my-learning" className="absolute inset-0 z-20" />
+                            <Link href="/my-learning" className="absolute inset-0 z-20" aria-label={`View details for ${course.title}`} />
                         </SpotlightCard>
                     ))}
                 </div>

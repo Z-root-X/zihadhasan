@@ -40,12 +40,19 @@ if (typeof window !== "undefined") {
   });
 
   // App Check (ReCaptcha Enterprise)
-  // Note: Requires valid site key in environment or console setup.
-  // import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
-  // if (typeof window !== "undefined") {
-  //    initializeAppCheck(app, {
-  //       provider: new ReCaptchaV3Provider('YOUR_RECAPTCHA_SITE_KEY'),
-  //       isTokenAutoRefreshEnabled: true
-  //    });
-  // }
+  const { initializeAppCheck, ReCaptchaEnterpriseProvider } = require("firebase/app-check");
+
+  if (typeof window !== "undefined") {
+    // Use a valid site key from environment or console. 
+    // Using a placeholder here that the user must replace or provide via ENV.
+    const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_KEY || "YOUR_RECAPTCHA_ENTERPRISE_KEY";
+
+    if (siteKey !== "YOUR_RECAPTCHA_ENTERPRISE_KEY") {
+      initializeAppCheck(app, {
+        provider: new ReCaptchaEnterpriseProvider(siteKey),
+        isTokenAutoRefreshEnabled: true
+      });
+      console.log("Firebase App Check Initialized");
+    }
+  }
 }

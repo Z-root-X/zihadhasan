@@ -50,7 +50,7 @@ export function BentoShowcase({ project, blog, tool }: BentoShowcaseProps) {
                                         ))}
                                     </div>
                                 </div>
-                                <Link href={`/projects`} className="absolute inset-0 z-20" />
+                                <Link href={`/projects`} className="absolute inset-0 z-20" aria-label={`View project: ${project.title}`} />
                             </SpotlightCard>
                         }
                     />
@@ -74,7 +74,7 @@ export function BentoShowcase({ project, blog, tool }: BentoShowcaseProps) {
                                 <div className="text-xs text-neutral-500">
                                     {blog.readingTime} min read
                                 </div>
-                                <Link href={`/blog/${blog.slug}`} className="absolute inset-0 z-20" />
+                                <Link href={`/blog/${blog.slug}`} className="absolute inset-0 z-20" aria-label={`Read blog post: ${blog.title}`} />
                             </SpotlightCard>
                         }
                     />
@@ -88,7 +88,7 @@ export function BentoShowcase({ project, blog, tool }: BentoShowcaseProps) {
                             <Github className="h-12 w-12 text-white mb-4 group-hover:scale-110 transition-transform" />
                             <h3 className="text-lg font-bold text-white">Open Source</h3>
                             <p className="text-sm text-neutral-400 mt-2">Check out my contributions</p>
-                            <Link href="https://github.com/Z-root-X" target="_blank" className="absolute inset-0 z-20" />
+                            <Link href="https://github.com/Z-root-X" target="_blank" className="absolute inset-0 z-20" aria-label="Visit GitHub Profile" />
                         </SpotlightCard>
                     }
                 />
@@ -107,7 +107,7 @@ export function BentoShowcase({ project, blog, tool }: BentoShowcaseProps) {
                                     <h3 className="text-xl font-bold text-white mb-2">{tool.name}</h3>
                                     <p className="text-xs text-neutral-400 line-clamp-2">{tool.description}</p>
                                 </div>
-                                <Link href="/tools" className="absolute inset-0 z-20" />
+                                <Link href="/tools" className="absolute inset-0 z-20" aria-label={`View details about ${tool.name}`} />
                             </SpotlightCard>
                         }
                     />

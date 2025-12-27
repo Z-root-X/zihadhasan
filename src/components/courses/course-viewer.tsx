@@ -60,6 +60,38 @@ export function CourseViewer({ initialId }: CourseViewerProps) {
         }
     }, [pathname, searchParams, initialId]);
 
+    // Handle Deep Linking (Lesson ID) with Security Check
+    useEffect(() => {
+        const lessonId = searchParams.get("lessonId");
+        if (lessonId && course && !activeLesson) {
+            const lesson = course.lessons.find(l => l.id === lessonId);
+            if (lesson) {
+                // Check Access
+                if (course.pricingType === 'paid') {
+                    if (!registration || registration.status !== 'approved') {
+                        if (!lesson.isFreePreview) {
+                            toast.error("This lesson is locked.");
+                            return;
+                        }
+                    } else if (course.isSequential) {
+                        // Check sequential lock
+                        const index = course.lessons.findIndex(l => l.id === lessonId);
+                        if (index > 0) {
+                            const prevId = course.lessons[index - 1].id;
+                            if (!registration.completedLessonIds?.includes(prevId)) {
+                                toast.error("You must complete previous lessons first.");
+                                // Redirect to first uncompleted or last completed?
+                                // For now just don't activate it.
+                                return;
+                            }
+                        }
+                    }
+                }
+                setActiveLesson(lesson);
+            }
+        }
+    }, [course, registration, searchParams, activeLesson]);
+
     useEffect(() => {
         if (id) {
             fetchCourse(id);
