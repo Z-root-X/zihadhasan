@@ -12,22 +12,15 @@ interface Props {
 // 1. Generate Static Params at Build Time
 // 1. Generate Static Params at Build Time
 export async function generateStaticParams() {
-    console.log("Starting generateStaticParams for blog...");
-    try {
-        const posts = await CMSService.getPosts(true); // Published only
-        console.log(`Found ${posts.length} posts.`);
+    const posts = await CMSService.getPosts();
 
-        if (posts.length === 0) {
-            console.log("No posts found. Returning dummy slug to satisfy static export.");
-            return [{ slug: "welcome" }];
-        }
-
+    if (posts.length > 0) {
         return posts.map((post) => ({
             slug: post.slug,
         }));
-    } catch (error) {
-        console.warn("Failed to generate static params for blog posts (likely missing index):", error);
-        return [{ slug: "welcome" }];
+    } else {
+        // Fallback for empty blog to prevent build failure
+        return [{ slug: "placeholder" }];
     }
 }
 
