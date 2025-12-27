@@ -1,41 +1,56 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import { collection, query, orderBy, limit, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { GlassCard } from "@/components/shared/glass-card";
 import { Badge } from "@/components/ui/badge";
-import { Message } from "@/lib/cms-service";
-import { Loader2, Mail, Clock } from "lucide-react";
+import { Message, CMSService } from "@/lib/cms-service";
+import { Loader2, Mail, Clock, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export default function MessagesPage() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchMessages = async () => {
-            try {
-                const q = query(
-                    collection(db, "messages"),
-                    orderBy("createdAt", "desc"),
-                    limit(50)
-                );
-                const snapshot = await getDocs(q);
-                const data = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                })) as Message[];
-                setMessages(data);
-            } catch (error) {
-                console.error("Failed to fetch messages", error);
-            } finally {
-                setLoading(false);
-            }
-        };
+    const fetchMessages = async () => {
+        setLoading(true);
+        try {
+            const q = query(
+                collection(db, "messages"),
+                orderBy("createdAt", "desc"),
+                limit(50)
+            );
+            const snapshot = await getDocs(q);
+            const data = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as Message[];
+            setMessages(data);
+        } catch (error) {
+            console.error("Failed to fetch messages", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchMessages();
     }, []);
+
+    const handleDelete = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this message?")) return;
+        try {
+            await CMSService.deleteMessage(id);
+            toast.success("Message deleted");
+            setMessages(prev => prev.filter(msg => msg.id !== id));
+        } catch (error) {
+            console.error("Failed to delete message", error);
+            toast.error("Failed to delete message");
+        }
+    };
 
     if (loading) {
         return (
@@ -75,9 +90,19 @@ export default function MessagesPage() {
                                         <span className="text-primary">{msg.email}</span>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2 text-xs text-gray-500 whitespace-nowrap">
-                                    <Clock className="h-3 w-3" />
-                                    {msg.createdAt ? formatDistanceToNow(msg.createdAt.toDate(), { addSuffix: true }) : 'Just now'}
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-2 text-xs text-gray-500 whitespace-nowrap">
+                                        <Clock className="h-3 w-3" />
+                                        {msg.createdAt ? formatDistanceToNow(msg.createdAt.toDate(), { addSuffix: true }) : 'Just now'}
+                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-500/10"
+                                        onClick={() => handleDelete(msg.id!)}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
                                 </div>
                             </div>
 

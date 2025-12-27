@@ -35,8 +35,8 @@ const productSchema = z.object({
     price: z.coerce.number().min(0, "Price must be positive"),
     type: z.enum(["digital", "physical"]),
     imageUrl: z.string().url("Cover image is required"),
-    assets: z.array(z.string()).optional(), // For digital - simplified to array of strings for now
-    downloadUrl: z.string().optional(), // For Direct download link (e.g. Google Drive) if not using assets array
+    assets: z.array(z.string()).default([]),
+    downloadUrl: z.string().default(""),
     published: z.boolean().default(false),
 });
 
@@ -49,10 +49,7 @@ interface ProductEditorProps {
 export function ProductEditor({ product, onSuccess, onCancel }: ProductEditorProps) {
     const [saving, setSaving] = useState(false);
 
-    // Use strict type for form values based on schema
-    type ProductFormValues = z.infer<typeof productSchema>;
-
-    const form = useForm<ProductFormValues>({
+    const form = useForm<z.infer<typeof productSchema>>({
         resolver: zodResolver(productSchema) as any,
         defaultValues: {
             title: product?.title || "",
@@ -62,17 +59,17 @@ export function ProductEditor({ product, onSuccess, onCancel }: ProductEditorPro
             imageUrl: product?.imageUrl || "",
             downloadUrl: product?.downloadUrl || "",
             published: product?.published || false,
+            // @ts-ignore - Assets array strict type workaround
             assets: product?.assets || [],
         },
     });
 
-    const onSubmit = async (values: ProductFormValues) => {
+    const onSubmit = async (values: z.infer<typeof productSchema>) => {
         setSaving(true);
         try {
-            // @ts-ignore
-            const productData: Omit<Product, "id" | "createdAt"> = {
+            const productData = {
                 ...values,
-                assets: values.assets || [], // explicit
+                // Ensure optional fields are handled (though defaults cover most)
             };
 
             if (product?.id) {
@@ -83,9 +80,10 @@ export function ProductEditor({ product, onSuccess, onCancel }: ProductEditorPro
                 toast.success("Product created successfully");
             }
             onSuccess();
-        } catch (error) {
-            console.error(error);
-            toast.error("Failed to save product");
+        } catch (error: any) {
+            console.error("Product Save Error:", error);
+            // Show more detailed error if available from Firebase/Schema
+            toast.error(error.message || "Failed to save product");
         } finally {
             setSaving(false);
         }

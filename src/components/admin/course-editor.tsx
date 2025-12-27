@@ -168,6 +168,7 @@ export function CourseEditor({ course, onSave, onCancel }: CourseEditorProps) {
             } else {
                 await addDoc(collection(db, "courses"), {
                     ...courseData,
+                    isDeleted: false,
                     createdAt: serverTimestamp()
                 });
                 toast.success("Course published successfully!");

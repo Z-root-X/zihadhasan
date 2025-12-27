@@ -612,22 +612,25 @@ export const CMSService = {
     // --- Courses ---
     getCourses: async () => {
         // Get all courses (Admin)
-        const q = query(collection(db, "courses"), where("isDeleted", "==", false));
+        // Note: Fetching ALL and filtering client-side to catch legacy data where isDeleted might be undefined
+        const q = query(collection(db, "courses"));
         const snapshot = await getDocs(q);
         return snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() } as Course));
+            .map(doc => ({ id: doc.id, ...doc.data() } as Course))
+            .filter(c => c.isDeleted !== true); // Show undefined isDeleted as valid
     },
 
     getPublishedCourses: async () => {
-        // Query ONLY published to satisfy Security Rules for unauthenticated access (e.g. build time)
+        // Query ONLY published to satisfy Security Rules
         const q = query(
             collection(db, "courses"),
             where("published", "==", true),
             where("isDeleted", "==", false)
         );
         const snapshot = await getDocs(q);
-        return snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() } as Course));
+        const courses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Course));
+        // Client-side sort to match other services
+        return courses.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
     },
 
     getCourse: async (id: string) => {
@@ -776,25 +779,28 @@ export const CMSService = {
     },
 
     // --- Products (Shop) ---
+    // --- Products (Shop) ---
     getProducts: async () => {
         const q = query(
             collection(db, "products"),
-            where("isDeleted", "==", false),
-            orderBy("createdAt", "desc")
+            where("isDeleted", "==", false)
+            // orderBy("createdAt", "desc") // Removed to avoid index requirement
         );
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+        const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+        return products.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
     },
 
     getPublishedProducts: async () => {
         const q = query(
             collection(db, "products"),
             where("published", "==", true),
-            where("isDeleted", "==", false),
-            orderBy("createdAt", "desc")
+            where("isDeleted", "==", false)
+            // orderBy("createdAt", "desc") // Removed to avoid index requirement
         );
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+        const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+        return products.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
     },
 
     getProduct: async (id: string) => {
@@ -804,8 +810,13 @@ export const CMSService = {
     },
 
     addProduct: async (product: Omit<Product, "id" | "createdAt">) => {
+        // Sanitize: Remove undefined keys to prevent Firestore errors
+        const sanitized = Object.fromEntries(
+            Object.entries(product).filter(([_, v]) => v !== undefined)
+        );
+
         return await addDoc(collection(db, "products"), {
-            ...product,
+            ...sanitized,
             isDeleted: false,
             createdAt: Timestamp.now(),
         });
@@ -867,6 +878,9 @@ export const CMSService = {
         if (snapshot.empty) return null;
         const doc = snapshot.docs[0];
         return { id: doc.id, ...doc.data() } as Registration;
+    },
+    deleteMessage: async (id: string) => {
+        await deleteDoc(doc(db, "messages", id));
     },
 };
 
