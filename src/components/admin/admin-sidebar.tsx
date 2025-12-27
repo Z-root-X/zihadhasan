@@ -19,7 +19,8 @@ import {
     BookOpen,
     Activity,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    ShoppingBag
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/firebase";
@@ -33,6 +34,7 @@ const sidebarItems = [
     { label: "Events", href: "/dashboard/events", icon: Calendar },
     { label: "Projects", href: "/dashboard/projects", icon: FolderGit },
     { label: "AI Tools", href: "/dashboard/tools", icon: Hammer },
+    { label: "Products", href: "/dashboard/products", icon: ShoppingBag },
     { label: "Blog", href: "/dashboard/blog", icon: PenTool },
     { label: "Registrations", href: "/dashboard/registrations", icon: Users },
     { label: "Users", href: "/dashboard/users", icon: Users },

@@ -75,6 +75,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
+    match /products/{productId} {
+      allow read: if (resource.data.published == true) || isAdmin();
+      allow write: if isAdmin();
+    }
+    
     match /settings/{docId} {
       allow read: if true;
       allow write: if isAdmin();
