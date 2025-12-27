@@ -5,6 +5,7 @@ import { Lock, PlayCircle, CheckCircle, MonitorPlay, X } from "lucide-react";
 import { Course, Lesson, Registration } from "@/lib/cms-service";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { LessonItem } from "./lesson-item";
 
 import { Button } from "@/components/ui/button";
 
@@ -61,53 +62,15 @@ export function LessonsList({ course, registration, className, onEnroll, onToggl
                         const isSelected = selectedLesson?.id === lesson.id;
 
                         return (
-                            <div
+                            <LessonItem
                                 key={lesson.id || index}
+                                lesson={lesson}
+                                index={index}
+                                isSelected={isSelected}
+                                isUnlocked={isUnlocked}
+                                isCompleted={isCompleted}
                                 onClick={() => handleLessonClick(lesson)}
-                                className={cn(
-                                    "group flex items-center gap-3 p-3 rounded-lg border transition-all duration-200 cursor-pointer",
-                                    isSelected
-                                        ? "bg-primary/20 border-primary/50"
-                                        : (isUnlocked
-                                            ? "bg-transparent border-transparent hover:bg-white/5"
-                                            : "bg-transparent border-transparent opacity-50 cursor-not-allowed")
-                                )}
-                            >
-                                {/* Status Icon */}
-                                <div className={cn(
-                                    "shrink-0 h-6 w-6 rounded-full flex items-center justify-center border",
-                                    isCompleted
-                                        ? "bg-green-500 text-white border-green-500"
-                                        : (isUnlocked
-                                            ? "border-gray-500 text-gray-400 group-hover:border-primary group-hover:text-primary"
-                                            : "border-gray-700 text-gray-700 bg-gray-900/50")
-                                )}>
-                                    {isCompleted ? (
-                                        <CheckCircle className="h-4 w-4" />
-                                    ) : !isUnlocked ? (
-                                        <Lock className="h-3 w-3" />
-                                    ) : (
-                                        <div className="h-2 w-2 rounded-full bg-current" />
-                                    )}
-                                </div>
-
-                                <div className="flex-1 min-w-0">
-                                    <h3 className={cn(
-                                        "text-sm font-medium truncate",
-                                        isSelected ? "text-primary" : (isUnlocked ? "text-gray-200 group-hover:text-white" : "text-gray-500")
-                                    )}>
-                                        {index + 1}. {lesson.title}
-                                    </h3>
-                                    <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
-                                        {lesson.duration && <span>{lesson.duration}</span>}
-                                        {lesson.isFreePreview && (
-                                            <span className="text-green-400 bg-green-500/10 px-1.5 rounded text-[10px]">
-                                                Free
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
+                            />
                         );
                     })
                 ) : (

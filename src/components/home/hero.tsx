@@ -14,7 +14,17 @@ interface HeroProps {
     toolCount: number;
 }
 
+import { useRef, useEffect } from 'react';
+import gsap from 'gsap';
+import { TextPlugin } from 'gsap/TextPlugin';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(TextPlugin, ScrollTrigger);
+
 export function Hero({ settings, projectCount, toolCount }: HeroProps) {
+    const headlineRef = useRef(null);
+    const containerRef = useRef(null);
+
     // 3D Tilt Logic
     const x = useMotionValue(0);
     const y = useMotionValue(0);
@@ -24,6 +34,30 @@ export function Hero({ settings, projectCount, toolCount }: HeroProps) {
 
     const rotateX = useTransform(mouseY, [-0.5, 0.5], ["15deg", "-15deg"]);
     const rotateY = useTransform(mouseX, [-0.5, 0.5], ["-15deg", "15deg"]);
+
+    // GSAP Animations
+    useEffect(() => {
+        const ctx = gsap.context(() => {
+            // Headline Reveal (Scramble Text or Letter by Letter)
+            // Note: Since we have HTML in the title, we'll use a simpler stagger fade-in for words if we split,
+            // or just simple opacity stagger.
+            // But user requested "TextPlugin" - which works best on simple strings.
+            // For complex HTML, let's use a stagger from auto-alpha 0.
+
+            // If heroTitle is string, we can animate it.
+            if (headlineRef.current) {
+                gsap.from(headlineRef.current, {
+                    duration: 1.5,
+                    opacity: 0,
+                    y: 100,
+                    ease: "power4.out",
+                    stagger: 0.1
+                });
+            }
+        }, containerRef);
+
+        return () => ctx.revert();
+    }, [settings?.heroTitle]);
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         const rect = e.currentTarget.getBoundingClientRect();
@@ -42,11 +76,6 @@ export function Hero({ settings, projectCount, toolCount }: HeroProps) {
         y.set(0);
     };
 
-    // Fetched in top-level useEffect now
-    // useEffect(() => {
-    //     CMSService.getGlobalSettings().then(setSettings);
-    // }, []);
-
     const heroTitle = settings?.heroTitle || (
         <>
             Building the <br />
@@ -62,7 +91,7 @@ export function Hero({ settings, projectCount, toolCount }: HeroProps) {
     const heroImage = settings?.heroImage || "https://i.postimg.cc/nzhzNpDP/372A6446.jpg";
 
     return (
-        <section className="relative flex min-h-[95vh] flex-col items-center justify-center overflow-hidden px-4 md:px-8 pt-20 perspective-1000">
+        <section ref={containerRef} className="relative flex min-h-[95vh] flex-col items-center justify-center overflow-hidden px-4 md:px-8 pt-20 perspective-1000">
             {/* Cinematic Perspective Grid */}
             <div className="absolute inset-0 -z-10 bg-black">
                 <div
@@ -86,17 +115,7 @@ export function Hero({ settings, projectCount, toolCount }: HeroProps) {
 
             <div className="container mx-auto grid gap-16 lg:grid-cols-12 lg:items-center relative z-10">
                 {/* Text Content - Immersive Typography */}
-                <motion.div
-                    initial="hidden"
-                    animate="visible"
-                    variants={{
-                        hidden: { opacity: 0, y: 50 },
-                        visible: {
-                            opacity: 1,
-                            y: 0,
-                            transition: { staggerChildren: 0.15, duration: 1, ease: [0.22, 1, 0.36, 1] }
-                        }
-                    }}
+                <div
                     className="flex flex-col items-center text-center lg:col-span-7 lg:items-start lg:text-left pt-10 lg:pt-0"
                 >
                     <motion.div variants={{ hidden: { opacity: 0, scale: 0.8 }, visible: { opacity: 1, scale: 1 } }}>
@@ -109,14 +128,14 @@ export function Hero({ settings, projectCount, toolCount }: HeroProps) {
                         </div>
                     </motion.div>
 
-                    <motion.h1
-                        variants={{ hidden: { opacity: 0, y: 40 }, visible: { opacity: 1, y: 0 } }}
+                    <h1
+                        ref={headlineRef}
                         className="mb-8 text-6xl font-black tracking-tighter text-white sm:text-8xl xl:text-9xl leading-[0.9] mix-blend-overlay opacity-90"
                     >
                         {typeof heroTitle === 'string' ? (
                             <span dangerouslySetInnerHTML={{ __html: heroTitle.replace(/\n/g, "<br/>") }} />
                         ) : heroTitle}
-                    </motion.h1>
+                    </h1>
 
                     <motion.p
                         variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
@@ -164,7 +183,7 @@ export function Hero({ settings, projectCount, toolCount }: HeroProps) {
                             </div>
                         ))}
                     </motion.div>
-                </motion.div>
+                </div>
 
                 {/* 3D Visual Content - Noir Style with Cinematic Fade */}
                 <motion.div

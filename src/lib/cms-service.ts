@@ -38,6 +38,7 @@ export interface Registration {
     id?: string;
     eventId?: string;
     courseId?: string;
+    productId?: string;
     userId?: string;
     email: string;
     name: string;
@@ -181,11 +182,26 @@ export interface Lesson {
     isFreePreview: boolean;
 }
 
+export interface Product {
+    id?: string;
+    title: string;
+    description: string;
+    price: number;
+    assets: string[]; // Cloudinary URLs
+    imageUrl: string; // Cover Image
+    type: 'digital' | 'physical';
+    downloadUrl?: string; // Encrypted or hidden until approved
+    published: boolean;
+    createdAt?: Timestamp;
+    isDeleted?: boolean;
+}
+
 export const CMSService = {
     // --- Projects ---
     addProject: async (project: Project) => {
         return await addDoc(collection(db, "projects"), {
             ...project,
+            isDeleted: false,
             createdAt: Timestamp.now(),
         });
     },
@@ -193,13 +209,13 @@ export const CMSService = {
     getProjects: async () => {
         const q = query(
             collection(db, "projects"),
+            where("isDeleted", "==", false),
             orderBy("createdAt", "desc"),
             limit(20)
         );
         const snapshot = await getDocs(q);
         return snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() } as Project))
-            .filter(p => !p.isDeleted);
+            .map(doc => ({ id: doc.id, ...doc.data() } as Project));
     },
 
     deleteProject: async (id: string) => {
@@ -221,6 +237,7 @@ export const CMSService = {
     addTool: async (tool: Tool) => {
         return await addDoc(collection(db, "tools"), {
             ...tool,
+            isDeleted: false,
             createdAt: Timestamp.now(),
         });
     },
@@ -228,13 +245,13 @@ export const CMSService = {
     getTools: async () => {
         const q = query(
             collection(db, "tools"),
+            where("isDeleted", "==", false),
             orderBy("createdAt", "desc"),
             limit(20)
         );
         const snapshot = await getDocs(q);
         return snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() } as Tool))
-            .filter(t => !t.isDeleted);
+            .map(doc => ({ id: doc.id, ...doc.data() } as Tool));
     },
 
     deleteTool: async (id: string) => {
@@ -278,6 +295,7 @@ export const CMSService = {
         return await addDoc(collection(db, "events"), {
             ...event,
             registeredCount: 0,
+            isDeleted: false,
             createdAt: Timestamp.now(),
         });
     },
@@ -285,13 +303,13 @@ export const CMSService = {
     getEvents: async () => {
         const q = query(
             collection(db, "events"),
+            where("isDeleted", "==", false),
             orderBy("date", "asc"),
             limit(20)
         );
         const snapshot = await getDocs(q);
         return snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() } as Event))
-            .filter(e => !e.isDeleted);
+            .map(doc => ({ id: doc.id, ...doc.data() } as Event));
     },
 
     getEvent: async (id: string) => {
@@ -550,40 +568,7 @@ export const CMSService = {
         await deleteDoc(doc(db, "subscribers", id));
     },
 
-    // --- Blog ---
-    getPosts: async (publishedOnly = true) => {
-        let q;
-        if (publishedOnly) {
-            // Query ONLY published to satisfy Security Rules for unauthenticated access
-            // We remove orderBy("createdAt") temporarily to avoid needing a composite index (published + createdAt)
-            // We will sort client-side.
-            q = query(
-                collection(db, "posts"),
-                where("published", "==", true)
-            );
-        } else {
-            // Admin only (authenticated) - can fetch all
-            q = query(
-                collection(db, "posts"),
-                orderBy("createdAt", "desc")
-            );
-        }
 
-        const snapshot = await getDocs(q);
-
-        let posts = snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() } as BlogPost))
-            .filter(p => !p.isDeleted);
-
-        // Sort client-side (descending)
-        posts.sort((a, b) => {
-            const tA = a.createdAt?.seconds || 0;
-            const tB = b.createdAt?.seconds || 0;
-            return tB - tA;
-        });
-
-        return posts;
-    },
 
     getPostBySlug: async (slug: string) => {
         const q = query(collection(db, "posts"), where("slug", "==", slug), limit(1));
@@ -602,6 +587,7 @@ export const CMSService = {
     createPost: async (post: Omit<BlogPost, "id" | "createdAt">) => {
         return await addDoc(collection(db, "posts"), {
             ...post,
+            isDeleted: false,
             createdAt: Timestamp.now(),
         });
     },
@@ -625,24 +611,23 @@ export const CMSService = {
 
     // --- Courses ---
     getCourses: async () => {
-        // Get all courses (Admin) - Filter deleted client-side for consistency
-        const q = query(collection(db, "courses"));
+        // Get all courses (Admin)
+        const q = query(collection(db, "courses"), where("isDeleted", "==", false));
         const snapshot = await getDocs(q);
         return snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() } as Course))
-            .filter(c => !c.isDeleted);
+            .map(doc => ({ id: doc.id, ...doc.data() } as Course));
     },
 
     getPublishedCourses: async () => {
         // Query ONLY published to satisfy Security Rules for unauthenticated access (e.g. build time)
         const q = query(
             collection(db, "courses"),
-            where("published", "==", true)
+            where("published", "==", true),
+            where("isDeleted", "==", false)
         );
         const snapshot = await getDocs(q);
         return snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() } as Course))
-            .filter(c => !c.isDeleted);
+            .map(doc => ({ id: doc.id, ...doc.data() } as Course));
     },
 
     getCourse: async (id: string) => {
@@ -654,6 +639,7 @@ export const CMSService = {
     addCourse: async (course: Omit<Course, "id" | "createdAt">) => {
         return await addDoc(collection(db, "courses"), {
             ...course,
+            isDeleted: false,
             createdAt: Timestamp.now(),
         });
     },
@@ -736,29 +722,151 @@ export const CMSService = {
 
     toggleLessonCompletion: async (registrationId: string, lessonId: string, isCompleted: boolean) => {
         const docRef = doc(db, "registrations", registrationId);
-        // Re-implementing with transaction for safety
         await runTransaction(db, async (transaction) => {
-            const regDoc = await transaction.get(docRef);
-            if (!regDoc.exists()) throw "Registration not found";
+            const docSnap = await transaction.get(docRef);
+            if (!docSnap.exists()) throw new Error("Registration not found");
 
-            const data = regDoc.data() as Registration;
-            const currentCompleted = data.completedLessonIds || [];
-
+            const currentCompleted = docSnap.data().completedLessonIds || [];
             let newCompleted;
+
             if (isCompleted) {
-                // Add if not exists
                 if (!currentCompleted.includes(lessonId)) {
                     newCompleted = [...currentCompleted, lessonId];
                 } else {
                     newCompleted = currentCompleted;
                 }
             } else {
-                // Remove if exists
-                newCompleted = currentCompleted.filter(id => id !== lessonId);
+                newCompleted = currentCompleted.filter((id: string) => id !== lessonId);
             }
 
             transaction.update(docRef, { completedLessonIds: newCompleted });
         });
+    },
+
+    // --- Blog ---
+    getPosts: async (publishedOnly: boolean = false) => {
+        let q;
+
+        if (publishedOnly) {
+            q = query(
+                collection(db, "posts"),
+                where("isDeleted", "==", false),
+                where("published", "==", true)
+                // orderBy("publishedAt", "desc") // Removed to avoid index requirement
+            );
+        } else {
+            q = query(
+                collection(db, "posts"),
+                where("isDeleted", "==", false),
+                orderBy("createdAt", "desc")
+            );
+        }
+
+        const snapshot = await getDocs(q);
+        const posts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as BlogPost));
+
+        // Sort client-side to ensure order without composite index
+        posts.sort((a, b) => {
+            const dateA = publishedOnly ? (a.publishedAt?.seconds || 0) : (a.createdAt?.seconds || 0);
+            const dateB = publishedOnly ? (b.publishedAt?.seconds || 0) : (b.createdAt?.seconds || 0);
+            return dateB - dateA;
+        });
+
+        return posts;
+    },
+
+    // --- Products (Shop) ---
+    getProducts: async () => {
+        const q = query(
+            collection(db, "products"),
+            where("isDeleted", "==", false),
+            orderBy("createdAt", "desc")
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+    },
+
+    getPublishedProducts: async () => {
+        const q = query(
+            collection(db, "products"),
+            where("published", "==", true),
+            where("isDeleted", "==", false),
+            orderBy("createdAt", "desc")
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+    },
+
+    getProduct: async (id: string) => {
+        const docRef = doc(db, "products", id);
+        const snapshot = await getDoc(docRef);
+        return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } as Product : null;
+    },
+
+    addProduct: async (product: Omit<Product, "id" | "createdAt">) => {
+        return await addDoc(collection(db, "products"), {
+            ...product,
+            isDeleted: false,
+            createdAt: Timestamp.now(),
+        });
+    },
+
+    updateProduct: async (id: string, data: Partial<Product>) => {
+        const docRef = doc(db, "products", id);
+        await updateDoc(docRef, data);
+    },
+
+    deleteProduct: async (id: string) => {
+        await updateDoc(doc(db, "products", id), { isDeleted: true });
+    },
+
+    // --- Product Registration (Purchase) ---
+    registerForProduct: async (productId: string, userDetails: { userId?: string; email: string; name: string; phone?: string; trxId?: string; screenshotUrl?: string; paymentMethod?: string; additionalInfo?: string }) => {
+        const registrationRef = doc(collection(db, "registrations"));
+        try {
+            // Check duplicates (optional, maybe allowed for physical?) - enforcing unique for digital
+            if (userDetails.userId) {
+                const q = query(
+                    collection(db, "registrations"),
+                    where("productId", "==", productId),
+                    where("userId", "==", userDetails.userId)
+                );
+                const existing = await getDocs(q);
+                if (!existing.empty) return { success: false, error: "Already purchased this product" };
+            }
+
+            const payload: any = {
+                productId,
+                email: userDetails.email,
+                name: userDetails.name,
+                status: "pending", // Always pending for products unless free
+                registeredAt: Timestamp.now()
+            };
+            if (userDetails.userId) payload.userId = userDetails.userId;
+            if (userDetails.phone) payload.phone = userDetails.phone;
+            if (userDetails.trxId) payload.trxId = userDetails.trxId;
+            if (userDetails.screenshotUrl) payload.screenshotUrl = userDetails.screenshotUrl;
+
+            await setDoc(registrationRef, payload);
+            return { success: true, id: registrationRef.id };
+        } catch (e) {
+            console.error("Product purchase failed", e);
+            return { success: false, error: e };
+        }
+    },
+
+    getUserProductPurchase: async (userId: string, productId: string) => {
+        const q = query(
+            collection(db, "registrations"),
+            where("productId", "==", productId),
+            where("userId", "==", userId),
+            where("status", "==", "approved"),
+            limit(1)
+        );
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) return null;
+        const doc = snapshot.docs[0];
+        return { id: doc.id, ...doc.data() } as Registration;
     },
 };
 

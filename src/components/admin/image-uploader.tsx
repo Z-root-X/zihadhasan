@@ -40,7 +40,7 @@ export function ImageUploader({ value, onChange, className, label = "Upload Imag
         let fileToUpload = file;
         try {
             const options = {
-                maxSizeMB: 1,
+                maxSizeMB: 0.8,
                 maxWidthOrHeight: 1920,
                 // usage: true // optional, for detailed logging
                 useWebWorker: true
@@ -65,7 +65,9 @@ export function ImageUploader({ value, onChange, className, label = "Upload Imag
             const data = await res.json();
 
             if (data.secure_url) {
-                onChange(data.secure_url);
+                // Add optimization flags
+                const optimizedUrl = data.secure_url.replace("/upload/", "/upload/f_auto,q_auto/");
+                onChange(optimizedUrl);
                 toast.success("Image uploaded successfully!");
             } else {
                 throw new Error("Upload failed");

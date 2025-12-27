@@ -259,16 +259,37 @@ export function CourseViewer({ initialId }: CourseViewerProps) {
                     />
                 )}
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                <div className="flex flex-col-reverse lg:flex-row gap-6 items-start">
 
-                    {/* LEFT (or TOP mobile) - Video Player & Main Content */}
-                    <div className={cn(
-                        "space-y-6 transition-all duration-300",
-                        isTheaterMode ? "lg:col-span-12" : "lg:col-span-8"
-                    )}>
+                    {/* LEFT - Sidebar (Hidden in Theater Mode) */}
+                    <motion.div
+                        layout
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{
+                            opacity: isTheaterMode ? 0 : 1,
+                            x: 0,
+                            width: isTheaterMode ? 0 : "auto",
+                            display: isTheaterMode ? "none" : "block"
+                        }}
+                        transition={{ duration: 0.4, type: "spring", bounce: 0 }}
+                        className="w-full lg:w-1/3 shrink-0"
+                    >
+                        <GlassCard className="p-5 sticky top-24 max-h-[85vh] overflow-y-auto custom-scrollbar">
+                            <SidebarContent />
+                        </GlassCard>
+                    </motion.div>
+
+                    {/* RIGHT (or TOP mobile) - Video Player & Main Content */}
+                    <motion.div
+                        layout
+                        className={cn("w-full transition-all duration-400 ease-in-out", isTheaterMode ? "lg:w-full" : "lg:w-2/3")}
+                    >
                         {/* Video Player Container */}
-                        <div className="relative aspect-video bg-black rounded-xl overflow-hidden border border-white/10 shadow-2xl">
-                            {/* Placeholder for now - LessonsList handles the modal player, but LMS usually has embedded player. 
+                        <motion.div
+                            layoutId="video-container"
+                            className="relative aspect-video bg-black rounded-xl overflow-hidden border border-white/10 shadow-2xl z-20"
+                        >
+                            {/* Placeholder for now - LessonsList handles the modal player. 
                                  Refactoring Note: Implementation Plan shifted LessonsList to Sidebar. 
                                  The 'Selected Lesson' playback state needs to be lifted to CourseViewer to show HERE. 
                                  For now, we will show Course Hero or Last Played Lesson. 
@@ -297,14 +318,17 @@ export function CourseViewer({ initialId }: CourseViewerProps) {
                             </div>
 
                             {/* Overlay Content if not playing */}
-                            <div className="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-black/90 via-black/50 to-transparent">
+                            <div className="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none">
                                 <h1 className="text-2xl md:text-4xl font-bold text-white mb-2">{course.title}</h1>
                                 <p className="text-gray-300 line-clamp-2">{course.description}</p>
                             </div>
-                        </div>
+                        </motion.div>
 
-                        {/* Details Tabs / Content */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Details Tabs / Content (Hidden in Theater Mode optionally, or just pushed down) */}
+                        <motion.div
+                            layout
+                            className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6"
+                        >
                             <GlassCard className="p-6">
                                 <h2 className="text-xl font-bold text-white mb-4">About this Course</h2>
                                 <div className="prose prose-invert prose-sm max-w-none text-gray-300">
@@ -323,17 +347,8 @@ export function CourseViewer({ initialId }: CourseViewerProps) {
                                     ))}
                                 </ul>
                             </GlassCard>
-                        </div>
-                    </div>
-
-                    {/* RIGHT - Sidebar (Hidden in Theater Mode) */}
-                    {!isTheaterMode && (
-                        <div className="lg:col-span-4 space-y-6">
-                            <GlassCard className="p-5 sticky top-24 max-h-[85vh] overflow-y-auto custom-scrollbar">
-                                <SidebarContent />
-                            </GlassCard>
-                        </div>
-                    )}
+                        </motion.div>
+                    </motion.div>
                 </div>
             </div>
         </div>

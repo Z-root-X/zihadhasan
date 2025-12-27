@@ -1,5 +1,7 @@
 "use client";
 
+"use client";
+
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, Calendar, FileText, CheckCircle, XCircle, Loader2, Search } from "lucide-react";
 import { BlogPost, CMSService } from "@/lib/cms-service";

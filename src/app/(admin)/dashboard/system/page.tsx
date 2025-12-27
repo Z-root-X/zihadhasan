@@ -2,10 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Database, Trash2, RefreshCw, HardDrive, Activity } from "lucide-react";
+import { AlertTriangle, Database, Trash2, RefreshCw, HardDrive, Activity, Users, Box, FileText, ShoppingBag, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 import { getSystemStats, cleanupSoftDeletedItems } from "@/actions/system";
 import { GlassCard } from "@/components/shared/glass-card";
@@ -13,7 +12,13 @@ import { GlassCard } from "@/components/shared/glass-card";
 export default function SystemHealthPage() {
     const [stats, setStats] = useState<{
         storage: { used: number; limit: number };
-        firebase: { reads: string; writes: string; status: string };
+        firebase: {
+            reads: string;
+            writes: string;
+            status: string;
+            details?: Record<string, number>;
+        };
+        trash: number;
     } | null>(null);
     const [loading, setLoading] = useState(true);
     const [cleaning, setCleaning] = useState(false);
@@ -23,6 +28,7 @@ export default function SystemHealthPage() {
     }, []);
 
     const loadStats = async () => {
+        setLoading(true);
         try {
             const data = await getSystemStats();
             setStats(data);
@@ -35,13 +41,19 @@ export default function SystemHealthPage() {
     };
 
     const handleCleanup = async () => {
-        if (!confirm("Are you sure you want to permanently delete all soft-deleted items? This cannot be undone.")) return;
+        if (!stats?.trash) {
+            toast.info("No items to clean up.");
+            return;
+        }
+
+        if (!confirm(`Are you sure you want to permanently delete ${stats.trash} items? This cannot be undone.`)) return;
 
         setCleaning(true);
         try {
             const result = await cleanupSoftDeletedItems();
             if (result.success) {
                 toast.success(`Cleanup complete. Removed ${result.count} items.`);
+                loadStats(); // Refresh
             } else {
                 toast.error("Cleanup failed.");
             }
@@ -57,24 +69,112 @@ export default function SystemHealthPage() {
         <div className="space-y-8 p-8 pt-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-white">System Health</h2>
+                    <h2 className="text-3xl font-bold tracking-tight text-white hover:text-primary transition-colors">System Health</h2>
                     <p className="text-muted-foreground">Monitor storage, database usage, and perform maintenance.</p>
                 </div>
-                <Button onClick={loadStats} variant="outline" className="gap-2">
+                <Button onClick={loadStats} variant="outline" className="gap-2 border-white/10 hover:bg-white/5">
                     <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                     Refresh
                 </Button>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {/* Cloudinary Storage */}
+                {/* Firebase Health */}
+                <GlassCard className="p-6 md:col-span-2">
+                    <div className="flex flex-row items-center justify-between space-y-0 pb-2 mb-4">
+                        <div className="flex items-center gap-2">
+                            <Activity className="h-5 w-5 text-green-400" />
+                            <span className="font-bold text-lg text-white">Database Metrics</span>
+                        </div>
+                        <Badge variant="outline" className="border-green-500/50 text-green-400">Live</Badge>
+                    </div>
+                    {stats ? (
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="bg-white/5 p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center">
+                                    <Users className="h-5 w-5 text-blue-400 mb-2" />
+                                    <div className="text-2xl font-bold text-white">{stats.firebase.details?.users || 0}</div>
+                                    <div className="text-xs text-gray-400">Users</div>
+                                </div>
+                                <div className="bg-white/5 p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center">
+                                    <GraduationCap className="h-5 w-5 text-purple-400 mb-2" />
+                                    <div className="text-2xl font-bold text-white">{stats.firebase.details?.registrations || 0}</div>
+                                    <div className="text-xs text-gray-400">Registrations</div>
+                                </div>
+                                <div className="bg-white/5 p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center">
+                                    <Box className="h-5 w-5 text-orange-400 mb-2" />
+                                    <div className="text-2xl font-bold text-white">{stats.firebase.details?.products || 0}</div>
+                                    <div className="text-xs text-gray-400">Products</div>
+                                </div>
+                                <div className="bg-white/5 p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center">
+                                    <FileText className="h-5 w-5 text-pink-400 mb-2" />
+                                    <div className="text-2xl font-bold text-white">{stats.firebase.details?.posts || 0}</div>
+                                    <div className="text-xs text-gray-400">Posts</div>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between text-sm bg-green-500/5 p-3 rounded-lg border border-green-500/10">
+                                <div className="flex items-center gap-2 text-green-400">
+                                    <Activity className="h-4 w-4" />
+                                    <span>System Status: Healthy</span>
+                                </div>
+                                <span className="text-gray-400">Total Documents: ~{stats.firebase.writes}</span>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="h-32 animate-pulse bg-white/5 rounded-xl" />
+                    )}
+                </GlassCard>
+
+                {/* Maintenance Actions */}
+                <GlassCard className="p-6">
+                    <div className="flex flex-row items-center justify-between space-y-0 pb-2 mb-4">
+                        <div className="flex items-center gap-2">
+                            <Trash2 className="h-5 w-5 text-red-400" />
+                            <span className="font-bold text-lg text-white">Trash Bin</span>
+                        </div>
+                        <Badge variant="outline" className="border-red-500/50 text-red-400">Action Required</Badge>
+                    </div>
+
+                    <div className="space-y-6">
+                        {stats ? (
+                            <div className="text-center py-4">
+                                <span className="text-4xl font-black text-white">{stats.trash}</span>
+                                <p className="text-sm text-gray-400">Items marked for deletion</p>
+                            </div>
+                        ) : (
+                            <div className="h-20 animate-pulse bg-white/5 rounded" />
+                        )}
+
+                        <div className="p-3 border border-red-500/20 bg-red-500/10 rounded-lg space-y-2">
+                            <h4 className="text-sm font-semibold text-red-400 flex items-center gap-2">
+                                <AlertTriangle className="h-4 w-4" />
+                                The Purge
+                            </h4>
+                            <p className="text-xs text-red-200/70">
+                                Permanently remove all soft-deleted items from the database.
+                            </p>
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                className="w-full bg-red-600 hover:bg-red-700 font-bold"
+                                onClick={handleCleanup}
+                                disabled={cleaning || !stats?.trash}
+                            >
+                                {cleaning ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                {cleaning ? "Purging..." : "Empty Trash"}
+                            </Button>
+                        </div>
+                    </div>
+                </GlassCard>
+
+                {/* Cloudinary Storage (Visual Only) */}
                 <GlassCard className="p-6">
                     <div className="flex flex-row items-center justify-between space-y-0 pb-2 mb-4">
                         <div className="flex items-center gap-2">
                             <HardDrive className="h-5 w-5 text-indigo-400" />
-                            <span className="font-bold text-lg text-white">Storage Usage</span>
+                            <span className="font-bold text-lg text-white">Storage</span>
                         </div>
-                        <Badge variant="outline" className="border-indigo-500/50 text-indigo-400">Cloudinary</Badge>
+                        <Badge variant="outline" className="border-indigo-500/50 text-indigo-400">Media</Badge>
                     </div>
                     {stats ? (
                         <div className="space-y-4">
@@ -85,79 +185,17 @@ export default function SystemHealthPage() {
                             <Progress
                                 value={(stats.storage.used / stats.storage.limit) * 100}
                                 className="h-2 bg-indigo-950"
-                            // Note: Need a custom indicator class if Progress supports it, or standard is fine
                             />
                             <p className="text-xs text-muted-foreground">
-                                Media assets (Images, Videos) stored in Cloud.
+                                Media assets stored in Cloudinary. (Estimate)
                             </p>
-                        </div>
-                    ) : (
-                        <div className="h-20 animate-pulse bg-white/5 rounded" />
-                    )}
-                </GlassCard>
-
-                {/* Firebase Health */}
-                <GlassCard className="p-6">
-                    <div className="flex flex-row items-center justify-between space-y-0 pb-2 mb-4">
-                        <div className="flex items-center gap-2">
-                            <Activity className="h-5 w-5 text-orange-400" />
-                            <span className="font-bold text-lg text-white">Database Health</span>
-                        </div>
-                        <Badge variant="outline" className="border-orange-500/50 text-orange-400">Firestore</Badge>
-                    </div>
-                    {stats ? (
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-white/5 p-3 rounded-lg text-center">
-                                    <div className="text-xs text-gray-400 mb-1">Reads</div>
-                                    <div className="font-bold text-green-400">{stats.firebase.reads}</div>
-                                </div>
-                                <div className="bg-white/5 p-3 rounded-lg text-center">
-                                    <div className="text-xs text-gray-400 mb-1">Writes</div>
-                                    <div className="font-bold text-green-400">{stats.firebase.writes}</div>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm text-green-400">
-                                <Activity className="h-4 w-4" />
-                                <span>System is operating normally.</span>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="h-20 animate-pulse bg-white/5 rounded" />
-                    )}
-                </GlassCard>
-
-                {/* Maintenance Actions */}
-                <GlassCard className="p-6">
-                    <div className="flex flex-row items-center justify-between space-y-0 pb-2 mb-4">
-                        <div className="flex items-center gap-2">
-                            <Database className="h-5 w-5 text-red-400" />
-                            <span className="font-bold text-lg text-white">Maintenance</span>
-                        </div>
-                        <Badge variant="outline" className="border-red-500/50 text-red-400">Actions</Badge>
-                    </div>
-
-                    <div className="space-y-4">
-                        <div className="p-3 border border-red-500/20 bg-red-500/10 rounded-lg space-y-2">
-                            <h4 className="text-sm font-semibold text-red-400 flex items-center gap-2">
-                                <AlertTriangle className="h-4 w-4" />
-                                Garbage Collection
-                            </h4>
-                            <p className="text-xs text-red-200/70">
-                                Permanently remove all items marked as "Deleted".
-                            </p>
-                            <Button
-                                variant="destructive"
-                                size="sm"
-                                className="w-full bg-red-600 hover:bg-red-700"
-                                onClick={handleCleanup}
-                                disabled={cleaning}
-                            >
-                                {cleaning ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                                Run Cleanup
+                            <Button variant="ghost" size="sm" className="w-full text-xs text-indigo-300 hover:text-indigo-200 hover:bg-indigo-500/10">
+                                View Cloudinary Console
                             </Button>
                         </div>
-                    </div>
+                    ) : (
+                        <div className="h-20 animate-pulse bg-white/5 rounded" />
+                    )}
                 </GlassCard>
             </div>
         </div>

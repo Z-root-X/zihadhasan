@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CMSService, Registration, Event, Course } from "@/lib/cms-service";
+import { CMSService, Registration, Event, Course, Product } from "@/lib/cms-service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -28,22 +28,7 @@ import {
 export default function RegistrationsPage() {
     const [registrations, setRegistrations] = useState<Registration[]>([]);
     const [events, setEvents] = useState<Event[]>([]);
-    const [courses, setCourses] = useState<Course[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selectedEntity, setSelectedEntity] = useState("all"); // Filter by Event or Course ID
-    const [selectedStatus, setSelectedStatus] = useState("all");
-    const [processingId, setProcessingId] = useState<string | null>(null);
-    const [editingRegistration, setEditingRegistration] = useState<Registration | null>(null);
-    const [viewingProof, setViewingProof] = useState<string | null>(null);
-    const [zoom, setZoom] = useState(1);
-
-    useEffect(() => {
-        if (!viewingProof) setZoom(1);
-    }, [viewingProof]);
-    const [deletingRegistrationId, setDeletingRegistrationId] = useState<string | null>(null);
-    const [selectedIds, setSelectedIds] = useState<string[]>([]);
-    const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+    const [products, setProducts] = useState<Product[]>([]);
 
     useEffect(() => {
         loadData();
@@ -52,20 +37,39 @@ export default function RegistrationsPage() {
     async function loadData() {
         setLoading(true);
         try {
-            const [regData, eventData, courseData] = await Promise.all([
+            const [regData, eventData, courseData, productData] = await Promise.all([
                 CMSService.getAllRegistrations(),
                 CMSService.getEvents(),
-                CMSService.getCourses()
+                CMSService.getCourses(),
+                CMSService.getProducts()
             ]);
             setRegistrations(regData);
             setEvents(eventData);
             setCourses(courseData);
+            setProducts(productData);
         } catch (error) {
             console.error("Failed to load data", error);
         } finally {
             setLoading(false);
         }
     }
+
+    const [courses, setCourses] = useState<Course[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [selectedEntity, setSelectedEntity] = useState("all");
+    const [selectedStatus, setSelectedStatus] = useState("all");
+    const [processingId, setProcessingId] = useState<string | null>(null);
+    const [editingRegistration, setEditingRegistration] = useState<Registration | null>(null);
+    const [viewingProof, setViewingProof] = useState<string | null>(null);
+    const [zoom, setZoom] = useState(1);
+    const [deletingRegistrationId, setDeletingRegistrationId] = useState<string | null>(null);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+
+    useEffect(() => {
+        if (!viewingProof) setZoom(1);
+    }, [viewingProof]);
 
     const handleUpdateRegistration = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -79,9 +83,9 @@ export default function RegistrationsPage() {
                 phone: editingRegistration.phone,
                 trxId: editingRegistration.trxId,
             });
-            // Optimistic update
             setRegistrations(prev => prev.map(r => r.id === editingRegistration.id ? editingRegistration : r));
             setEditingRegistration(null);
+            toast.success("Registration updated");
         } catch (error) {
             console.error(error);
             toast.error("Failed to update registration");
@@ -97,6 +101,7 @@ export default function RegistrationsPage() {
             const result = await CMSService.approveRegistration(id);
             if (result.success) {
                 setRegistrations(prev => prev.map(r => r.id === id ? { ...r, status: "approved" } : r));
+                toast.success("Approved successfully");
             } else {
                 toast.error("Failed to approve", { description: String(result.error) });
             }
@@ -137,6 +142,21 @@ export default function RegistrationsPage() {
     };
 
     const toggleAll = () => {
+        // We will define filteredRegistrations later in the component body, but for this handler we need it.
+        // Actually, since this is inside the component, we can assume filteredRegistrations is available if we move this definition down or hoist filteredRegistrations.
+        // However, standard React component structure usually puts state -> effects -> handlers -> render.
+        // filteredRegistrations depends on state. So it should be defined before handlers if handlers use it? No, handlers capture it from closure.
+        // But toggleAll usually needs to access the *current* filtered list. 
+        // Let's defer toggleAll logic or just use 'registrations' for now if we want to be safe, but typically bulk select is for visible items.
+        // To avoid reference errors, I will define `filteredRegistrations` calculation *before* this handler or just inside the handler if possible? 
+        // No, `filteredRegistrations` is a derived value used in render.
+        // I will implement a safe version here that might need `filteredRegistrations` to be defined. 
+        // Since I am replacing a block, I should ensure `filteredRegistrations` is defined or available.
+        // Wait, `filteredRegistrations` is defined *after* these handlers in the original file.
+        // This means `toggleAll` will close over `filteredRegistrations` which is a const defined *later*? That works in function scope if it's a function declaration, but these are consts/arrows.
+        // Actually `filteredRegistrations` is derived *during render*. Handlers are created *during render*. So they can access it.
+        // But `filteredRegistrations` is defined at line 66 in the *current* file.
+        // So I can use it here.
         if (selectedIds.length === filteredRegistrations.length) {
             setSelectedIds([]);
         } else {
@@ -181,6 +201,7 @@ export default function RegistrationsPage() {
     const getEntityName = (reg: Registration) => {
         if (reg.eventId) return events.find(e => e.id === reg.eventId)?.title || "Unknown Event";
         if (reg.courseId) return courses.find(c => c.id === reg.courseId)?.title || "Unknown Course";
+        if (reg.productId) return products.find(p => p.id === reg.productId)?.title || "Unknown Product";
         return "Unknown";
     };
 
@@ -190,7 +211,7 @@ export default function RegistrationsPage() {
             r.trxId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             r.phone?.includes(searchTerm);
 
-        const matchesEntity = selectedEntity === "all" || r.eventId === selectedEntity || r.courseId === selectedEntity;
+        const matchesEntity = selectedEntity === "all" || r.eventId === selectedEntity || r.courseId === selectedEntity || r.productId === selectedEntity;
         const matchesStatus = selectedStatus === "all" || r.status === selectedStatus;
 
         return matchesSearch && matchesEntity && matchesStatus;
@@ -204,7 +225,11 @@ export default function RegistrationsPage() {
 
         const headers = ["Registration ID", "Type", "Title", "Name", "Email", "Phone", "TrxID", "Status", "Date"];
         const rows = filteredRegistrations.map(r => {
-            const entityType = r.eventId ? "Event" : "Course";
+            let entityType = "Unknown";
+            if (r.eventId) entityType = "Event";
+            else if (r.courseId) entityType = "Course";
+            else if (r.productId) entityType = "Product";
+
             const title = getEntityName(r);
             return [
                 r.id,
@@ -223,6 +248,7 @@ export default function RegistrationsPage() {
     };
 
     if (loading) {
+        // ... existing loader
         return (
             <div className="space-y-6">
                 <div className="flex justify-between">
@@ -254,11 +280,13 @@ export default function RegistrationsPage() {
 
     return (
         <div className="space-y-6">
+            {/* ... Existing UI ... */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight text-white">Registrations</h2>
-                    <p className="text-muted-foreground">Manage enrollments for events and courses.</p>
+                    <p className="text-muted-foreground">Manage enrollments for events, courses, and product sales.</p>
                 </div>
+                {/* ... Buttons ... */}
                 <div className="flex items-center gap-2">
                     {selectedIds.length > 0 && (
                         <>
@@ -287,7 +315,6 @@ export default function RegistrationsPage() {
                 </div>
             </div>
 
-            {/* Filters */}
             {/* Filters */}
             <div className="flex flex-col md:flex-row gap-6">
                 <div className="flex-1 bg-white/5 p-1 rounded-lg border border-white/10 flex">
@@ -342,6 +369,14 @@ export default function RegistrationsPage() {
                                 ))}
                             </>
                         )}
+                        {products.length > 0 && (
+                            <>
+                                <SelectItem value="disabled-products" disabled className="font-bold opacity-100 mt-2">Products:</SelectItem>
+                                {products.map(p => (
+                                    <SelectItem key={p.id} value={p.id || "unknown"}>{p.title}</SelectItem>
+                                ))}
+                            </>
+                        )}
                     </SelectContent>
                 </Select>
             </div>
@@ -359,7 +394,7 @@ export default function RegistrationsPage() {
                                 />
                             </TableHead>
                             <TableHead className="text-gray-300">User</TableHead>
-                            <TableHead className="text-gray-300">Event / Course</TableHead>
+                            <TableHead className="text-gray-300">Event / Course / Product</TableHead>
                             <TableHead className="text-gray-300">Verification Info</TableHead>
                             <TableHead className="text-gray-300">Status</TableHead>
                             <TableHead className="text-right text-gray-300">Actions</TableHead>
@@ -376,6 +411,9 @@ export default function RegistrationsPage() {
                             filteredRegistrations.map((reg) => {
                                 const title = getEntityName(reg);
                                 const isCourse = !!reg.courseId;
+                                const isEvent = !!reg.eventId;
+                                const isProduct = !!reg.productId;
+
                                 return (
                                     <TableRow key={reg.id} className="border-white/10 hover:bg-white/5">
                                         <TableCell>
@@ -392,9 +430,10 @@ export default function RegistrationsPage() {
                                         </TableCell>
                                         <TableCell className="text-gray-300">
                                             <div className="flex items-center gap-2">
-                                                <Badge variant="outline" className={`text-xs ${isCourse ? 'border-purple-500 text-purple-400' : 'border-blue-500 text-blue-400'}`}>
-                                                    {isCourse ? 'Course' : 'Event'}
-                                                </Badge>
+                                                {isCourse && <Badge variant="outline" className="text-xs border-purple-500 text-purple-400">Course</Badge>}
+                                                {isEvent && <Badge variant="outline" className="text-xs border-blue-500 text-blue-400">Event</Badge>}
+                                                {isProduct && <Badge variant="outline" className="text-xs border-amber-500 text-amber-400">Product</Badge>}
+
                                                 <span className="truncate max-w-[150px]" title={title}>{title}</span>
                                             </div>
                                             <div className="text-xs text-gray-500 mt-1">{reg.id}</div>

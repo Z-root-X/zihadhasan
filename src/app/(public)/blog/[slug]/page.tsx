@@ -10,15 +10,24 @@ interface Props {
 }
 
 // 1. Generate Static Params at Build Time
+// 1. Generate Static Params at Build Time
 export async function generateStaticParams() {
+    console.log("Starting generateStaticParams for blog...");
     try {
         const posts = await CMSService.getPosts(true); // Published only
+        console.log(`Found ${posts.length} posts.`);
+
+        if (posts.length === 0) {
+            console.log("No posts found. Returning dummy slug to satisfy static export.");
+            return [{ slug: "welcome" }];
+        }
+
         return posts.map((post) => ({
             slug: post.slug,
         }));
     } catch (error) {
         console.warn("Failed to generate static params for blog posts (likely missing index):", error);
-        return [];
+        return [{ slug: "welcome" }];
     }
 }
 
@@ -48,8 +57,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 // 3. Server Component Renders the Page
-export default async function BlogPostPage({ params }: Props) {
-    const slug = (await params).slug;
+export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params;
     const post = await CMSService.getPostBySlug(slug);
 
     if (!post) {
