@@ -15,18 +15,27 @@ interface LessonsListProps {
     className?: string;
     onEnroll?: () => void;
     onToggleLesson?: (lessonId: string, completed: boolean) => void;
+    activeLesson?: Lesson | null;
+    onSelectLesson?: (lesson: Lesson) => void;
 }
 
-export function LessonsList({ course, registration, className, onEnroll, onToggleLesson }: LessonsListProps) {
-    const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+export function LessonsList({ course, registration, className, onEnroll, onToggleLesson, activeLesson, onSelectLesson }: LessonsListProps) {
+    const [localSelectedLesson, setLocalSelectedLesson] = useState<Lesson | null>(null);
     const [showLockedModal, setShowLockedModal] = useState(false);
 
     const isApproved = registration?.status === "approved";
     const completedIds = registration?.completedLessonIds || [];
 
+    // Use prop if available, otherwise local state
+    const effectiveSelectedLesson = activeLesson !== undefined ? activeLesson : localSelectedLesson;
+
     const handleLessonClick = (lesson: Lesson) => {
         if (lesson.isFreePreview || isApproved) {
-            setSelectedLesson(lesson);
+            if (onSelectLesson) {
+                onSelectLesson(lesson);
+            } else {
+                setLocalSelectedLesson(lesson);
+            }
         } else {
             setShowLockedModal(true);
         }
@@ -59,7 +68,7 @@ export function LessonsList({ course, registration, className, onEnroll, onToggl
                         }
 
                         // Determine visual state
-                        const isSelected = selectedLesson?.id === lesson.id;
+                        const isSelected = effectiveSelectedLesson?.id === lesson.id;
 
                         return (
                             <LessonItem
@@ -81,33 +90,35 @@ export function LessonsList({ course, registration, className, onEnroll, onToggl
 
             </div>
 
-            {/* Video Player Modal */}
-            <Dialog open={!!selectedLesson} onOpenChange={(open) => !open && setSelectedLesson(null)}>
-                <DialogContent className="max-w-4xl bg-gray-900/95 border-white/10 text-white backdrop-blur-xl">
-                    <DialogHeader>
-                        <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                            <PlayCircle className="h-5 w-5 text-primary" />
-                            {selectedLesson?.title}
-                        </DialogTitle>
-                    </DialogHeader>
+            {/* Video Player Modal - Only render if NOT controlled (no onSelectLesson) */}
+            {!onSelectLesson && (
+                <Dialog open={!!localSelectedLesson} onOpenChange={(open) => !open && setLocalSelectedLesson(null)}>
+                    <DialogContent className="max-w-4xl bg-gray-900/95 border-white/10 text-white backdrop-blur-xl">
+                        <DialogHeader>
+                            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                                <PlayCircle className="h-5 w-5 text-primary" />
+                                {localSelectedLesson?.title}
+                            </DialogTitle>
+                        </DialogHeader>
 
-                    <div className="aspect-video w-full bg-black rounded-lg overflow-hidden border border-white/10 relative">
-                        {selectedLesson?.videoUrl ? (
-                            <iframe
-                                src={getEmbedUrl(selectedLesson.videoUrl)}
-                                title={selectedLesson.title}
-                                className="w-full h-full"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                            />
-                        ) : (
-                            <div className="flex items-center justify-center h-full text-gray-500">
-                                Video URL not available
-                            </div>
-                        )}
-                    </div>
-                </DialogContent>
-            </Dialog>
+                        <div className="aspect-video w-full bg-black rounded-lg overflow-hidden border border-white/10 relative">
+                            {localSelectedLesson?.videoUrl ? (
+                                <iframe
+                                    src={getEmbedUrl(localSelectedLesson.videoUrl)}
+                                    title={localSelectedLesson.title}
+                                    className="w-full h-full"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                />
+                            ) : (
+                                <div className="flex items-center justify-center h-full text-gray-500">
+                                    Video URL not available
+                                </div>
+                            )}
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            )}
 
             {/* Locked Lesson Premium Modal */}
             <Dialog open={showLockedModal} onOpenChange={setShowLockedModal}>

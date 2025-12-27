@@ -15,6 +15,8 @@ import { generateCourseSchema } from "@/lib/schema-generator";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { Lesson } from "@/lib/cms-service";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface CourseViewerProps {
     initialId?: string;
@@ -33,6 +35,7 @@ export function CourseViewer({ initialId }: CourseViewerProps) {
 
     // UI States
     const [isTheaterMode, setIsTheaterMode] = useState(false);
+    const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
     const searchParams = useSearchParams();
 
     useEffect(() => {
@@ -229,6 +232,8 @@ export function CourseViewer({ initialId }: CourseViewerProps) {
                             setRegistration({ ...registration, completedLessonIds: currentCompleted }); // Revert
                         }
                     }}
+                    activeLesson={activeLesson}
+                    onSelectLesson={setActiveLesson}
                 />
             </div>
         </div>
@@ -294,14 +299,28 @@ export function CourseViewer({ initialId }: CourseViewerProps) {
                                  The 'Selected Lesson' playback state needs to be lifted to CourseViewer to show HERE. 
                                  For now, we will show Course Hero or Last Played Lesson. 
                              */}
-                            {course.headerImage ? (
-                                <img
-                                    src={course.headerImage}
-                                    alt={course.title}
-                                    className="w-full h-full object-cover opacity-80"
+                            {activeLesson?.videoUrl ? (
+                                <iframe
+                                    src={getEmbedUrl(activeLesson.videoUrl)}
+                                    title={activeLesson.title}
+                                    className="w-full h-full"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
                                 />
+                            ) : course.headerImage ? (
+                                <div className="relative w-full h-full group">
+                                    <img
+                                        src={course.headerImage}
+                                        alt={course.title}
+                                        className="w-full h-full object-cover opacity-80 group-hover:opacity-60 transition-opacity"
+                                    />
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                        <PlayCircle className="h-20 w-20 text-white opacity-80 group-hover:scale-110 transition-transform duration-300" />
+                                    </div>
+                                    <p className="absolute bottom-10 w-full text-center text-gray-300 pointer-events-none">Select a lesson to start learning</p>
+                                </div>
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-500">
+                                <div className="w-full h-full flex items-center justify-center text-gray-500 bg-neutral-900">
                                     <PlayCircle className="h-16 w-16 opacity-50" />
                                 </div>
                             )}
@@ -323,6 +342,112 @@ export function CourseViewer({ initialId }: CourseViewerProps) {
                                 <p className="text-gray-300 line-clamp-2">{course.description}</p>
                             </div>
                         </motion.div>
+
+                        {/* Navigation Buttons */}
+                        {user && registration && registration.status === 'approved' && course.lessons.length > 0 && (
+                            <div className="flex items-center justify-between gap-4 mt-4 mb-6">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        if (!activeLesson) return;
+                                        const currentIndex = course.lessons.findIndex(l => l.id === activeLesson.id);
+                                        if (currentIndex > 0) {
+                                            setActiveLesson(course.lessons[currentIndex - 1]);
+                                        }
+                                    }}
+                                    disabled={!activeLesson || course.lessons.findIndex(l => l.id === activeLesson.id) <= 0}
+                                    className="flex-1 border-white/10 hover:bg-white/10 text-white"
+                                >
+                                    <ChevronLeft className="mr-2 h-4 w-4" /> Previous Lesson
+                                </Button>
+                                <Button
+                                    onClick={() => {
+                                        if (!activeLesson) {
+                                            // Start first lesson
+                                            if (course.lessons.length > 0) setActiveLesson(course.lessons[0]);
+                                            return;
+                                        }
+                                        const currentIndex = course.lessons.findIndex(l => l.id === activeLesson.id);
+                                        if (currentIndex < course.lessons.length - 1) {
+                                            const nextLesson = course.lessons[currentIndex + 1];
+                                            let isLocked = false;
+                                            if (course.isSequential) {
+                                                if (!registration.completedLessonIds?.includes(activeLesson.id)) {
+                                                    isLocked = true;
+                                                }
+                                            }
+
+                                            if (isLocked) {
+                                                toast.error("Complete this lesson to unlock the next one!");
+                                            } else {
+                                                setActiveLesson(nextLesson);
+                                            }
+                                        }
+                                    }}
+                                    disabled={
+                                        // Disable if at end
+                                        !activeLesson && course.lessons.length === 0 ||
+                                        !!(activeLesson && course.lessons.findIndex(l => l.id === activeLesson.id) >= course.lessons.length - 1)
+                                    }
+                                    className="flex-1 bg-primary text-black hover:bg-primary/90"
+                                >
+                                    Next Lesson <ChevronRight className="ml-2 h-4 w-4" />
+                                </Button>
+                            </div>
+                        )}
+
+                        {/* Navigation Buttons */}
+                        {user && registration && registration.status === 'approved' && course.lessons.length > 0 && (
+                            <div className="flex items-center justify-between gap-4 mt-4 mb-6">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        if (!activeLesson) return;
+                                        const currentIndex = course.lessons.findIndex(l => l.id === activeLesson.id);
+                                        if (currentIndex > 0) {
+                                            setActiveLesson(course.lessons[currentIndex - 1]);
+                                        }
+                                    }}
+                                    disabled={!activeLesson || course.lessons.findIndex(l => l.id === activeLesson.id) <= 0}
+                                    className="flex-1 border-white/10 hover:bg-white/10 text-white"
+                                >
+                                    <ChevronLeft className="mr-2 h-4 w-4" /> Previous Lesson
+                                </Button>
+                                <Button
+                                    onClick={() => {
+                                        if (!activeLesson) {
+                                            // Start first lesson
+                                            if (course.lessons.length > 0) setActiveLesson(course.lessons[0]);
+                                            return;
+                                        }
+                                        const currentIndex = course.lessons.findIndex(l => l.id === activeLesson.id);
+                                        if (currentIndex < course.lessons.length - 1) {
+                                            const nextLesson = course.lessons[currentIndex + 1];
+                                            let isLocked = false;
+                                            if (course.isSequential) {
+                                                if (!registration.completedLessonIds?.includes(activeLesson.id)) {
+                                                    isLocked = true;
+                                                }
+                                            }
+
+                                            if (isLocked) {
+                                                toast.error("Complete this lesson to unlock the next one!");
+                                            } else {
+                                                setActiveLesson(nextLesson);
+                                            }
+                                        }
+                                    }}
+                                    disabled={
+                                        // Disable if at end
+                                        !activeLesson && course.lessons.length === 0 ||
+                                        !!(activeLesson && course.lessons.findIndex(l => l.id === activeLesson.id) >= course.lessons.length - 1)
+                                    }
+                                    className="flex-1 bg-primary text-black hover:bg-primary/90"
+                                >
+                                    Next Lesson <ChevronRight className="ml-2 h-4 w-4" />
+                                </Button>
+                            </div>
+                        )}
 
                         {/* Details Tabs / Content (Hidden in Theater Mode optionally, or just pushed down) */}
                         <motion.div
@@ -353,4 +478,20 @@ export function CourseViewer({ initialId }: CourseViewerProps) {
             </div>
         </div>
     );
+}
+
+function getEmbedUrl(url: string): string {
+    if (!url) return "";
+    if (url.includes("youtube.com") || url.includes("youtu.be")) {
+        let videoId = "";
+        if (url.includes("youtu.be")) videoId = url.split("/").pop() || "";
+        else if (url.includes("v=")) videoId = url.split("v=")[1].split("&")[0];
+        else if (url.includes("embed/")) return url;
+        return `https://www.youtube.com/embed/${videoId}`;
+    }
+    if (url.includes("vimeo.com")) {
+        const videoId = url.split("/").pop();
+        return `https://player.vimeo.com/video/${videoId}`;
+    }
+    return url;
 }

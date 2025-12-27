@@ -24,6 +24,7 @@ export function generateBlogPostSchema(post: BlogPost): WithContext<BlogPosting>
         description: post.excerpt,
         image: post.coverImage ? [post.coverImage] : [],
         datePublished: post.publishedAt ? new Date(post.publishedAt.seconds * 1000).toISOString() : new Date().toISOString(),
+        dateModified: post.publishedAt ? new Date(post.publishedAt.seconds * 1000).toISOString() : new Date().toISOString(),
         author: {
             "@type": "Person",
             name: "Zihad Hasan",

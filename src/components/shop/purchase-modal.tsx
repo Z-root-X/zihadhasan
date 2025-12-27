@@ -215,7 +215,7 @@ export function PurchaseModal({ open, onOpenChange, product }: PurchaseModalProp
 
                                 <Button type="submit" className="w-full bg-primary text-black hover:bg-primary/90" disabled={submitting}>
                                     {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Confirm Purchase
+                                    {submitting ? "Placing Order..." : "Confirm Purchase"}
                                 </Button>
                             </form>
                         </Form>
