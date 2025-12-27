@@ -1,8 +1,9 @@
 "use client";
 
+import React from "react";
+
 import { BentoGrid, BentoGridItem } from "@/components/shared/bento-grid";
 import { Project, Tool, BlogPost } from "@/lib/cms-service";
-import { SpotlightCard } from "@/components/ui/spotlight-card";
 import { Github, ArrowUpRight, Cpu, Quote } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -13,11 +14,46 @@ interface BentoShowcaseProps {
     tool: Tool | null;
 }
 
+// Helper for Spotlight Effect
+function SpotlightItem({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+    const [position, setPosition] = React.useState<{ x: number; y: number }>({ x: 0, y: 0 });
+    const [opacity, setOpacity] = React.useState(0);
+
+    const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        setPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+        setOpacity(1);
+    };
+
+    const handleMouseLeave = () => {
+        setOpacity(0);
+    };
+
+    return (
+        <div
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            className={`relative overflow-hidden rounded-xl border border-white/10 bg-neutral-900/50 backdrop-blur-xl transition-colors hover:border-white/20 ${className}`}
+        >
+            <div
+                className="pointer-events-none absolute -inset-px opacity-0 transition-opacity duration-300"
+                style={{
+                    opacity,
+                    background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(255,255,255,0.06), transparent 40%)`
+                }}
+            />
+            {children}
+        </div>
+    );
+}
+
 export function BentoShowcase({ project, blog, tool }: BentoShowcaseProps) {
 
     return (
-        <section className="py-20 px-4 bg-black">
-            <div className="max-w-7xl mx-auto mb-12">
+        <section className="py-20 px-4 bg-black relative">
+            <div className="absolute inset-0 bg-neutral-950/50" />
+
+            <div className="max-w-7xl mx-auto mb-12 relative z-10">
                 <h2 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
                     Discover More
                 </h2>
@@ -32,7 +68,7 @@ export function BentoShowcase({ project, blog, tool }: BentoShowcaseProps) {
                     <BentoGridItem
                         className="md:col-span-2 md:row-span-2 min-h-[400px]"
                         header={
-                            <SpotlightCard className="h-full w-full p-0 border-none bg-neutral-900 group overflow-hidden relative">
+                            <SpotlightItem className="h-full w-full p-0 border-none group">
                                 <Image
                                     src={project.imageUrl}
                                     alt={project.title}
@@ -51,7 +87,7 @@ export function BentoShowcase({ project, blog, tool }: BentoShowcaseProps) {
                                     </div>
                                 </div>
                                 <Link href={`/projects`} className="absolute inset-0 z-20" aria-label={`View project: ${project.title}`} />
-                            </SpotlightCard>
+                            </SpotlightItem>
                         }
                     />
                 )}
@@ -61,7 +97,7 @@ export function BentoShowcase({ project, blog, tool }: BentoShowcaseProps) {
                     <BentoGridItem
                         className="md:col-span-1 md:row-span-1"
                         header={
-                            <SpotlightCard className="h-full w-full p-6 flex flex-col justify-between bg-neutral-900 group">
+                            <SpotlightItem className="h-full w-full p-6 flex flex-col justify-between group">
                                 <div>
                                     <div className="flex items-center justify-between mb-4">
                                         <span className="text-xs font-mono text-blue-400">LATEST POST</span>
@@ -75,7 +111,7 @@ export function BentoShowcase({ project, blog, tool }: BentoShowcaseProps) {
                                     {blog.readingTime} min read
                                 </div>
                                 <Link href={`/blog/${blog.slug}`} className="absolute inset-0 z-20" aria-label={`Read blog post: ${blog.title}`} />
-                            </SpotlightCard>
+                            </SpotlightItem>
                         }
                     />
                 )}
@@ -84,12 +120,12 @@ export function BentoShowcase({ project, blog, tool }: BentoShowcaseProps) {
                 <BentoGridItem
                     className="md:col-span-1 md:row-span-1"
                     header={
-                        <SpotlightCard className="h-full w-full p-6 flex flex-col items-center justify-center bg-neutral-900 group text-center">
+                        <SpotlightItem className="h-full w-full p-6 flex flex-col items-center justify-center group text-center">
                             <Github className="h-12 w-12 text-white mb-4 group-hover:scale-110 transition-transform" />
                             <h3 className="text-lg font-bold text-white">Open Source</h3>
                             <p className="text-sm text-neutral-400 mt-2">Check out my contributions</p>
                             <Link href="https://github.com/Z-root-X" target="_blank" className="absolute inset-0 z-20" aria-label="Visit GitHub Profile" />
-                        </SpotlightCard>
+                        </SpotlightItem>
                     }
                 />
 
@@ -98,7 +134,7 @@ export function BentoShowcase({ project, blog, tool }: BentoShowcaseProps) {
                     <BentoGridItem
                         className="md:col-span-1 md:row-span-1"
                         header={
-                            <SpotlightCard className="h-full w-full p-6 bg-neutral-900 group relative overflow-hidden">
+                            <SpotlightItem className="h-full w-full p-6 group relative overflow-hidden">
                                 <div className="absolute top-0 right-0 p-4 opacity-50">
                                     <Cpu className="h-24 w-24 text-white/5 -rotate-12" />
                                 </div>
@@ -108,7 +144,7 @@ export function BentoShowcase({ project, blog, tool }: BentoShowcaseProps) {
                                     <p className="text-xs text-neutral-400 line-clamp-2">{tool.description}</p>
                                 </div>
                                 <Link href="/tools" className="absolute inset-0 z-20" aria-label={`View details about ${tool.name}`} />
-                            </SpotlightCard>
+                            </SpotlightItem>
                         }
                     />
                 )}
@@ -117,7 +153,7 @@ export function BentoShowcase({ project, blog, tool }: BentoShowcaseProps) {
                 <BentoGridItem
                     className="md:col-span-2 md:row-span-1"
                     header={
-                        <SpotlightCard className="h-full w-full p-8 bg-neutral-900 flex items-center gap-6">
+                        <SpotlightItem className="h-full w-full p-8 flex items-center gap-6">
                             <Quote className="h-12 w-12 text-white/20 shrink-0" />
                             <div>
                                 <p className="text-lg md:text-xl text-neutral-200 italic font-light">
@@ -131,7 +167,7 @@ export function BentoShowcase({ project, blog, tool }: BentoShowcaseProps) {
                                     </div>
                                 </div>
                             </div>
-                        </SpotlightCard>
+                        </SpotlightItem>
                     }
                 />
             </BentoGrid>

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Outfit, Anek_Bangla } from "next/font/google";
+import { Inter_Tight, Outfit, Anek_Bangla } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SmoothScroll } from "@/components/smooth-scroll";
@@ -11,9 +11,10 @@ import { AuthModal } from "@/components/auth/auth-modal";
 import { MobileDock } from "@/components/shared/mobile-dock";
 import { Toaster } from "sonner";
 
-const inter = Inter({
+const interTight = Inter_Tight({
   variable: "--font-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const outfit = Outfit({
@@ -92,7 +93,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={cn(
-          inter.variable,
+          interTight.variable,
           outfit.variable,
           anekBangla.variable,
           "antialiased bg-background text-foreground relative overflow-x-hidden selection:bg-primary/20 selection:text-primary font-sans"

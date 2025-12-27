@@ -37,20 +37,16 @@ export function Hero({ settings, projectCount, toolCount }: HeroProps) {
     // GSAP Animations
     useEffect(() => {
         const ctx = gsap.context(() => {
-            // Headline Reveal (Scramble Text or Letter by Letter)
-            // Note: Since we have HTML in the title, we'll use a simpler stagger fade-in for words if we split,
-            // or just simple opacity stagger.
-            // But user requested "TextPlugin" - which works best on simple strings.
-            // For complex HTML, let's use a stagger from auto-alpha 0.
-
-            // If heroTitle is string, we can animate it.
+            // Text Masking Reveal
             if (headlineRef.current) {
+                // Split text manually or use TextPlugin for simple reveals
+                // For this "Masking" effect:
                 gsap.from(headlineRef.current, {
-                    duration: 1.5,
-                    opacity: 0,
-                    y: 100,
+                    yPercent: 100, // Slide up from bottom
+                    duration: 1.2,
                     ease: "power4.out",
-                    stagger: 0.1
+                    skewY: 7,
+                    stagger: 0.05
                 });
             }
         }, containerRef);
@@ -118,9 +114,9 @@ export function Hero({ settings, projectCount, toolCount }: HeroProps) {
                 }}
             />
 
-            {/* Aurora Background Blobs */}
-            <div className="absolute top-[-20%] right-[-10%] h-[500px] w-[500px] rounded-full bg-blue-600/20 blur-[120px] mix-blend-screen animate-pulse pointer-events-none" />
-            <div className="absolute bottom-[-20%] left-[-10%] h-[500px] w-[500px] rounded-full bg-purple-600/20 blur-[120px] mix-blend-screen animate-pulse pointer-events-none" style={{ animationDelay: "2s" }} />
+            {/* Aurora Background (Indigo/Black) */}
+            <div className="absolute top-[-20%] right-[-10%] h-[500px] w-[500px] rounded-full bg-indigo-600/20 blur-[120px] mix-blend-screen animate-pulse pointer-events-none" />
+            <div className="absolute bottom-[-20%] left-[-10%] h-[500px] w-[500px] rounded-full bg-blue-900/20 blur-[120px] mix-blend-screen animate-pulse pointer-events-none" style={{ animationDelay: "2s" }} />
 
             <div className="container mx-auto grid gap-16 lg:grid-cols-12 lg:items-center relative z-10">
                 {/* Text Content - Immersive Typography */}
@@ -137,14 +133,16 @@ export function Hero({ settings, projectCount, toolCount }: HeroProps) {
                         </div>
                     </motion.div>
 
-                    <h1
-                        ref={headlineRef}
-                        className="mb-8 text-6xl font-black tracking-tighter text-white sm:text-8xl xl:text-9xl leading-[0.9] mix-blend-overlay opacity-90"
-                    >
-                        {typeof heroTitle === 'string' ? (
-                            <span dangerouslySetInnerHTML={{ __html: heroTitle.replace(/\n/g, "<br/>") }} />
-                        ) : heroTitle}
-                    </h1>
+                    <div className="overflow-hidden">
+                        <h1
+                            ref={headlineRef}
+                            className="mb-8 text-6xl font-black tracking-tighter text-white sm:text-8xl xl:text-9xl leading-[0.9] mix-blend-overlay opacity-90 transform-gpu"
+                        >
+                            {typeof heroTitle === 'string' ? (
+                                <span dangerouslySetInnerHTML={{ __html: heroTitle.replace(/\n/g, "<br/>") }} />
+                            ) : heroTitle}
+                        </h1>
+                    </div>
 
                     <motion.p
                         variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
@@ -228,11 +226,13 @@ export function Hero({ settings, projectCount, toolCount }: HeroProps) {
                             <div className="absolute inset-0 bg-neutral-950/20 z-10 mix-blend-multiply transition-opacity duration-500 group-hover:opacity-0" />
 
                             <Image
-                                src={heroImage}
+                                src={heroImage.includes('cloudinary') ? heroImage.replace('/upload/', '/upload/f_auto,q_auto/') : heroImage}
                                 alt="Zihad Hasan"
                                 fill
                                 className="object-cover object-center grayscale group-hover:grayscale-0 transition-all duration-700 ease-in-out scale-100 group-hover:scale-110"
                                 priority
+                                placeholder="blur"
+                                blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+P+/HgAFhAJ/wlseKgAAAABJRU5ErkJggg=="
                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                             />
                         </div>
@@ -251,6 +251,26 @@ export function Hero({ settings, projectCount, toolCount }: HeroProps) {
                                 <div>SYS: ONLINE</div>
                             </div>
                         </motion.div>
+
+                        {/* Layered Parallax Elements (New Request) */}
+                        <motion.div
+                            style={{ x: useTransform(mouseX, [-0.5, 0.5], [20, -20]), y: useTransform(mouseY, [-0.5, 0.5], [20, -20]), transform: "translateZ(80px)" }}
+                            className="absolute -top-8 -right-8 z-40 hidden md:block"
+                        >
+                            <div className="p-4 rounded-2xl border border-white/10 bg-black/60 backdrop-blur-md shadow-xl">
+                                <Code className="h-6 w-6 text-blue-400" />
+                            </div>
+                        </motion.div>
+
+                        <motion.div
+                            style={{ x: useTransform(mouseX, [-0.5, 0.5], [-15, 15]), y: useTransform(mouseY, [-0.5, 0.5], [-15, 15]), transform: "translateZ(40px)" }}
+                            className="absolute top-1/2 -left-12 z-30 hidden md:block"
+                        >
+                            <div className="p-3 rounded-full border border-white/5 bg-indigo-500/20 backdrop-blur-sm">
+                                <Sparkles className="h-4 w-4 text-indigo-300" />
+                            </div>
+                        </motion.div>
+
                     </motion.div>
                 </motion.div>
             </div>
