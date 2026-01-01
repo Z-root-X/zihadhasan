@@ -3,9 +3,8 @@ import { Hero } from "@/components/home/hero";
 import { TechMarquee } from "@/components/home/tech-marquee";
 import { BentoShowcase } from "@/components/home/bento-showcase";
 import { CourseTeaser } from "@/components/home/course-teaser";
+import { PhilosophySection } from "@/components/home/philosophy-section";
 import { NewsletterForm } from "@/components/shared/newsletter-form";
-import { Github, Twitter, Linkedin, Mail } from "lucide-react";
-import Link from "next/link";
 // Modular Imports for Tree Shaking
 import { CoreService } from "@/lib/services/core-service";
 import { ProjectService } from "@/lib/services/project-service";
@@ -16,8 +15,6 @@ import { Section } from "./components/section"; // Helper component
 
 // Cache-First Strategy: Revalidate every 24 hours (86400s) to save Spark Plan Quota
 export const revalidate = 86400;
-
-// --- Suspense Wrappers ---
 
 // --- Suspense Wrappers ---
 
@@ -80,20 +77,25 @@ function SectionSkeleton() {
 
 export default function Home() {
   return (
-    <main className="bg-black min-h-screen text-white overflow-hidden">
+    <main className="bg-black min-h-screen text-white overflow-hidden selection:bg-primary/30 selection:text-white relative">
+      {/* Global Noise Texture for that "Film/Figma" Feel */}
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: `url("https://grainy-gradients.vercel.app/noise.svg")` }} />
+
       {/* A. Hero Section - Suspense enables instant page load while data fetches */}
       <Suspense fallback={<HeroSkeleton />}>
         <HeroSection />
       </Suspense>
 
-      {/* B. Tech Marquee - Static */}
-      <Section className="relative z-10">
+      {/* B. Tech Marquee - Cleaner, Floating */}
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 border-b border-white/5">
         <TechMarquee />
-      </Section>
+      </div>
 
-      {/* C. Bento Showcase */}
+      {/* C. Bento Showcase - Massive Spacing */}
       <Suspense fallback={<SectionSkeleton />}>
-        <BentoSection />
+        <div className="py-24">
+           <BentoSection />
+        </div>
       </Suspense>
 
       {/* D. Course Teaser */}
@@ -101,48 +103,22 @@ export default function Home() {
         <CourseSection />
       </Suspense>
 
-      {/* E. Philosophy / About */}
-      <Section className="py-24 px-4 bg-black relative">
-        <div className="absolute inset-0 bg-neutral-900/20 skew-y-3 transform origin-bottom-left" />
-        <div className="max-w-4xl mx-auto relative z-10 text-center">
-          <h2 className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/40 mb-8 leading-tight">
-            Building the future of the web, <br /> one pixel and one line of code at a time.
-          </h2>
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 md:p-12 hover:bg-white/10 transition-colors">
-            <p className="text-xl md:text-2xl text-neutral-300 font-light mb-8">
-              "I believe in software that feels biological—fluid, responsive, and alive. My mission is to bridge the gap between complex AI systems and intuitive human experiences."
-            </p>
-            <div className="flex justify-center gap-6">
-              {[
-                { icon: Github, href: "https://github.com/Z-root-X" },
-                { icon: Twitter, href: "https://twitter.com" },
-                { icon: Linkedin, href: "https://linkedin.com" },
-                { icon: Mail, href: "mailto:contact@zihadhasan.com" },
-              ].map((social, i) => (
-                <Link
-                  key={i}
-                  href={social.href}
-                  target="_blank"
-                  className="p-3 rounded-full bg-white/5 hover:bg-white/20 hover:scale-110 transition-all border border-white/5"
-                >
-                  <social.icon className="h-5 w-5 text-white" />
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      </Section>
+      {/* E. Philosophy / About - Clean Component */}
+      <PhilosophySection />
 
       {/* F. Newsletter */}
-      <Section className="py-24 px-4 container mx-auto">
-        <div className="relative rounded-3xl overflow-hidden bg-neutral-900 border border-white/10 p-8 md:p-16 text-center">
-          {/* Background Glow */}
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
+      <Section className="py-40 px-4 container mx-auto relative z-10">
+        <div className="relative rounded-[2.5rem] overflow-hidden bg-neutral-900/30 border border-white/10 p-8 md:p-24 text-center backdrop-blur-md group hover:border-white/20 transition-all duration-500">
+          {/* Subtle Grid Background for this card too */}
+           <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
+
+          {/* Background Glow - Reduced intensity */}
+          <div className="absolute top-0 right-1/2 w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 pointer-events-none group-hover:bg-indigo-500/20 transition-all duration-700" />
 
           <div className="relative z-10 max-w-2xl mx-auto space-y-8">
             <div>
-              <h2 className="text-3xl font-bold text-white mb-4">Join the Inner Circle</h2>
-              <p className="text-neutral-400">
+              <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tighter">Join the Inner Circle</h2>
+              <p className="text-neutral-400 text-lg font-light leading-relaxed">
                 Get weekly insights on full-stack development, AI engineering, and building software products from scratch.
               </p>
             </div>
@@ -151,7 +127,7 @@ export default function Home() {
               <NewsletterForm />
             </div>
 
-            <div className="pt-8 text-neutral-600 text-sm">
+            <div className="pt-8 text-neutral-600 text-[10px] uppercase tracking-[0.2em] font-medium">
               No spam. Unsubscribe at any time.
             </div>
           </div>

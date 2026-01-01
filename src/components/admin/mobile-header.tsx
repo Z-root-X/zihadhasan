@@ -14,8 +14,10 @@ export function MobileHeader() {
 
     // Close sheet on route change
     useEffect(() => {
-        setOpen(false);
-    }, [pathname]);
+        if (open) {
+            setOpen(false);
+        }
+    }, [pathname, open]);
 
     return (
         <div className="flex h-16 items-center border-b border-white/10 bg-black/50 px-4 backdrop-blur-xl md:hidden">
