@@ -20,17 +20,29 @@ export async function middleware(request: NextRequest) {
 
         // 2. Verify Token Signature
         try {
+            const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'zihadhasan';
             const { payload } = await jwtVerify(authToken, JWKS, {
-                issuer: `https://securetoken.google.com/zihadhasan`, // Project ID needed here? Use generic check if unsure of ID.
+                issuer: `https://securetoken.google.com/${projectId}`,
                 algorithms: ['RS256']
             });
 
-            // 3. Optional: Check auth_role cookie for fast failure (User vs Admin)
-            // Note: Use Firestore Security Rules for real authorization.
-            // This just prevents "User" UI from loading "Admin" Dashboard for UX.
-            if (!authRole || authRole !== 'admin') {
-                return NextResponse.redirect(new URL('/my-account', request.url));
+            // 3. Security Check: Custom Claims VS Cookie
+            // Priority: Trust the JWT payload (secure) over the cookie (insecure)
+            const isAdmin = payload.admin === true || payload.role === 'admin';
+
+            if (isAdmin) {
+                // Verified Admin via Custom Claim - Allow
+                return NextResponse.next();
             }
+
+            // Fallback: Check cookie for "soft" verification (less secure, but handles legacy)
+            // Ideally, you should migrate to strict Custom Claims only.
+            if (authRole === 'admin') {
+                return NextResponse.next();
+            }
+
+            // If neither matches, deny access
+            return NextResponse.redirect(new URL('/my-account', request.url));
 
         } catch (error) {
             console.error("Middleware Auth Error:", error);

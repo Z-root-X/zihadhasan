@@ -45,7 +45,7 @@ service cloud.firestore {
     // --- Existing Portfolio Collections (Enhanced Security) ---
     
     match /subscribers/{docId} {
-      allow create: if true;
+      allow create: if request.auth != null || (request.app != null); // Allow App Check verified requests
       allow read, delete: if isAdmin();
     }
 
@@ -81,25 +81,12 @@ service cloud.firestore {
 
       // Secure Content (Download URL)
       // Only readable if Admin OR User has PURCHASED and is APPROVED
+      // Schema Enforcement: We now enforce registrations/{userId}_{productId}
       match /secure/content {
         allow read: if isAdmin() || (
             request.auth != null && 
             get(/databases/$(database)/documents/registrations/$(request.auth.uid + "_" + productId)).data.status == 'approved'
         );
-        // Note: The above registration ID pattern needs to be consistent. 
-        // Currently registrations are auto-ID. We need to QUERY registrations.
-        // Firestore Rules limitation: Cannot run complex queries in rules easily without listing IDs.
-        // ALTERNATIVE: Use a custom function to check specific registration document if we can determine ID, 
-        // OR rely on the fact that we can't easily query "all registrations" in rule.
-        // Standard Fix: We should probably name registration docs as `userId_productId` to make this rule efficient.
-        // For now, let's use a simplified check or stick to Admin protection + API endpoint proxy if needed.
-        // BUT, the prompt suggested: "allow access if get(/databases/$(database)/documents/registrations/$(regId)).data.status == 'approved'"
-        // This implies the Client must provide the `regId`? No, standard Firestore reads don't pass extra params.
-        // If we want checking existence, we need a known ID.
-        // Let's assume for this "Expert Fix" that we will enforce a schema change where registration ID = `${userId}_${productId}` on creation?
-        // Or we use a recursive check? No.
-        // Let's stick to: Admin Only for now, and rely on `cms-service` to fetch it via Admin SDK (not possible in Client SDK rule).
-        // WAIT. If we want client to read it directly, we need a rule.
         allow write: if isAdmin();
       }
     }
@@ -155,7 +142,7 @@ service cloud.firestore {
     
     // --- Contact Messages ---
     match /messages/{messageId} {
-      allow create: if true; // Public contact form
+      allow create: if request.auth != null || (request.app != null); // App Check for spam protection
       allow read, delete: if isAdmin();
     }
     

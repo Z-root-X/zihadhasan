@@ -13,7 +13,22 @@ interface CourseTeaserProps {
 }
 
 export function CourseTeaser({ courses }: CourseTeaserProps) {
-    if (courses.length === 0) return null;
+    if (courses.length === 0) {
+        return (
+            <section className="py-24 px-4 bg-black relative overflow-hidden border-t border-white/5">
+                <div className="max-w-7xl mx-auto text-center relative z-10">
+                    <h2 className="text-3xl font-bold text-white mb-4">Premium Courses</h2>
+                    <div className="p-12 rounded-2xl bg-neutral-900/50 border border-white/10 backdrop-blur-sm">
+                        <BookOpen className="h-12 w-12 text-blue-400 mx-auto mb-4 opacity-50" />
+                        <h3 className="text-xl font-bold text-white mb-2">Curriculum in Development</h3>
+                        <p className="text-neutral-400 max-w-lg mx-auto">
+                            We are crafting in-depth masterclasses. Stay tuned for the launch of our first course series.
+                        </p>
+                    </div>
+                </div>
+            </section>
+        )
+    }
 
     return (
         <section className="py-24 px-4 bg-black relative overflow-hidden">

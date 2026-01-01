@@ -20,11 +20,13 @@ const interTight = Inter_Tight({
 const outfit = Outfit({
   variable: "--font-heading",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const anekBangla = Anek_Bangla({
   variable: "--font-bengali",
   subsets: ["bengali"],
+  display: "swap",
 });
 
 import { CMSService } from "@/lib/cms-service";
@@ -101,8 +103,8 @@ export default function RootLayout({
       >
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
-          enableSystem={false}
+          defaultTheme="system"
+          enableSystem
           disableTransitionOnChange
         >
           <SmoothScroll>
@@ -117,7 +119,7 @@ export default function RootLayout({
               />
               {children}
               <MobileDock />
-              <Toaster position="top-center" richColors theme="dark" />
+              <Toaster position="top-center" richColors theme="system" />
             </AuthProvider>
           </SmoothScroll>
         </ThemeProvider>

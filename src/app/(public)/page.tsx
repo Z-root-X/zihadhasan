@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Hero } from "@/components/home/hero";
 import { TechMarquee } from "@/components/home/tech-marquee";
 import { BentoShowcase } from "@/components/home/bento-showcase";
@@ -5,21 +6,42 @@ import { CourseTeaser } from "@/components/home/course-teaser";
 import { NewsletterForm } from "@/components/shared/newsletter-form";
 import { Github, Twitter, Linkedin, Mail } from "lucide-react";
 import Link from "next/link";
-import { CMSService } from "@/lib/cms-service";
+// Modular Imports for Tree Shaking
+import { CoreService } from "@/lib/services/core-service";
+import { ProjectService } from "@/lib/services/project-service";
+import { CourseService } from "@/lib/services/course-service";
+import { BlogService } from "@/lib/services/blog-service";
 
 import { Section } from "./components/section"; // Helper component
 
-// Cache-First Strategy: Revalidate every hour
-export const revalidate = 3600;
+// Cache-First Strategy: Revalidate every 24 hours (86400s) to save Spark Plan Quota
+export const revalidate = 86400;
 
-export default async function Home() {
-  // Parallel Data Fetching
-  const [settings, projects, tools, courses, blogPosts] = await Promise.all([
-    CMSService.getGlobalSettings().catch(e => { console.warn("Settings fetch failed", e); return null; }),
-    CMSService.getProjects().catch(e => { console.warn("Projects fetch failed", e); return []; }),
-    CMSService.getTools().catch(e => { console.warn("Tools fetch failed", e); return []; }),
-    CMSService.getPublishedCourses().catch(e => { console.warn("Courses fetch failed", e); return []; }),
-    CMSService.getPosts(true).catch(e => { console.warn("Posts fetch failed", e); return []; }),
+// --- Suspense Wrappers ---
+
+// --- Suspense Wrappers ---
+
+async function HeroSection() {
+  const [settings, projects, tools] = await Promise.all([
+    CoreService.getGlobalSettings().catch(() => null),
+    ProjectService.getProjects().catch(() => []),
+    ProjectService.getTools().catch(() => [])
+  ]);
+
+  return (
+    <Hero
+      settings={settings}
+      projectCount={projects.length}
+      toolCount={tools.length}
+    />
+  );
+}
+
+async function BentoSection() {
+  const [projects, tools, blogPosts] = await Promise.all([
+    ProjectService.getProjects().catch(() => []),
+    ProjectService.getTools().catch(() => []),
+    BlogService.getPosts(true).catch(() => [])
   ]);
 
   const featuredProject = projects.length > 0 ? projects[0] : null;
@@ -27,32 +49,57 @@ export default async function Home() {
   const featuredBlog = blogPosts.length > 0 ? blogPosts[0] : null;
 
   return (
-    <main className="bg-black min-h-screen text-white overflow-hidden">
-      {/* A. Hero Section */}
-      <Hero
-        settings={settings}
-        projectCount={projects.length}
-        toolCount={tools.length}
+    <Section>
+      <BentoShowcase
+        project={featuredProject}
+        blog={featuredBlog}
+        tool={featuredTool}
       />
+    </Section>
+  );
+}
 
-      {/* B. Tech Marquee */}
+async function CourseSection() {
+  const courses = await CourseService.getPublishedCourses().catch(() => []);
+
+  return (
+    <Section>
+      <CourseTeaser courses={courses.slice(0, 3)} />
+    </Section>
+  );
+}
+
+// --- Skeletons ---
+function HeroSkeleton() {
+  return <div className="h-screen w-full bg-neutral-950 animate-pulse" />;
+}
+
+function SectionSkeleton() {
+  return <div className="h-[500px] w-full bg-neutral-900/20 animate-pulse my-20" />;
+}
+
+export default function Home() {
+  return (
+    <main className="bg-black min-h-screen text-white overflow-hidden">
+      {/* A. Hero Section - Suspense enables instant page load while data fetches */}
+      <Suspense fallback={<HeroSkeleton />}>
+        <HeroSection />
+      </Suspense>
+
+      {/* B. Tech Marquee - Static */}
       <Section className="relative z-10">
         <TechMarquee />
       </Section>
 
       {/* C. Bento Showcase */}
-      <Section>
-        <BentoShowcase
-          project={featuredProject}
-          blog={featuredBlog}
-          tool={featuredTool}
-        />
-      </Section>
+      <Suspense fallback={<SectionSkeleton />}>
+        <BentoSection />
+      </Suspense>
 
       {/* D. Course Teaser */}
-      <Section>
-        <CourseTeaser courses={courses.slice(0, 3)} />
-      </Section>
+      <Suspense fallback={<SectionSkeleton />}>
+        <CourseSection />
+      </Suspense>
 
       {/* E. Philosophy / About */}
       <Section className="py-24 px-4 bg-black relative">

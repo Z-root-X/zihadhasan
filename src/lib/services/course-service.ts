@@ -99,7 +99,9 @@ export const CourseService = {
     },
 
     registerForCourse: async (courseId: string, userDetails: { userId?: string; email: string; name: string; phone?: string; trxId?: string; screenshotUrl?: string; paymentMethod?: string; additionalInfo?: string }) => {
-        const registrationRef = doc(collection(db, "registrations"));
+        // Schema Enforcement: Use deterministic ID if User ID is known
+        const docId = userDetails.userId ? `${userDetails.userId}_${courseId}` : undefined;
+        const registrationRef = docId ? doc(db, "registrations", docId) : doc(collection(db, "registrations"));
         try {
             // Check duplicates (client-side of query) which aligns with Security Rules (must filter by userId)
             const q = query(

@@ -86,7 +86,9 @@ export const EventService = {
     // Updated Logic: Defaults to "pending" to allow Admin verification of Payment
     registerForEvent: async (eventId: string, userDetails: { userId?: string; email: string; name: string; phone?: string; trxId?: string }): Promise<{ success: boolean; error?: any; id?: string }> => {
         const eventRef = doc(db, "events", eventId);
-        const registrationRef = doc(collection(db, "registrations")); // Auto-ID
+        // Schema Enforcement: Use deterministic ID if User ID is known
+        const docId = userDetails.userId ? `${userDetails.userId}_${eventId}` : undefined;
+        const registrationRef = docId ? doc(db, "registrations", docId) : doc(collection(db, "registrations"));
 
         try {
             await runTransaction(db, async (transaction) => {

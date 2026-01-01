@@ -22,6 +22,13 @@ A high-performance codebase powering the personal portfolio of Zihad Hasan. Buil
 -   **Backend**: Firebase (Firestore, Auth, Storage)
 -   **Deployment**: Firebase Hosting
 
+## 🧠 Architecture Highlights
+
+-   **Service-Oriented Core**: Migrated from a monolithic CMS service to domain-specific services (`UserService`, `ProjectService`, etc.) for better separation of concerns and tree-shaking.
+-   **Deterministic Security**: Implements `userId_resourceId` pattern for registrations, enabling O(1) security rule lookups without expensive queries.
+-   **Cost-Optimized**: Aggressive caching policies (24h ISR) and zero-cost admin checks via Custom Claims.
+-   **Facade Pattern**: Maintains backward compatibility via a unified Service Facade, allowing gradual refactoring of legacy pages.
+
 ## 📂 Project Structure
 
 ```bash

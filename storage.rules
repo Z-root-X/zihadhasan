@@ -11,8 +11,7 @@ service firebase.storage {
     // firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
     
     function isAdmin() {
-      return request.auth != null && 
-             firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return request.auth != null && request.auth.token.admin == true;
     }
 
     match /{allPaths=**} {

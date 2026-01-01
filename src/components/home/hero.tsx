@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { MagneticButton } from "@/components/ui/magnetic-button";
 import Link from "next/link";
 import Image from "next/image";
+import { getImageUrl } from "@/lib/cloudinary-utils";
 import { GlobalSettings } from "@/lib/cms-service";
 
 interface HeroProps {
@@ -93,10 +94,13 @@ export function Hero({ settings, projectCount, toolCount }: HeroProps) {
     );
 
     const heroSubtitle = settings?.heroSubtitle || "I craft high-performance web applications and AI-powered solutions that define the next generation of digital experiences.";
+
     const heroImage = settings?.heroImage || "https://i.postimg.cc/nzhzNpDP/372A6446.jpg";
 
     return (
         <section ref={containerRef} className="relative flex min-h-[95vh] flex-col items-center justify-center overflow-hidden px-4 md:px-8 pt-20 perspective-1000">
+            {/* ... (rest of the component structure remains) */}
+
             {/* Cinematic Perspective Grid */}
             <div className="absolute inset-0 -z-10 bg-black">
                 <div
@@ -226,7 +230,7 @@ export function Hero({ settings, projectCount, toolCount }: HeroProps) {
                             <div className="absolute inset-0 bg-neutral-950/20 z-10 mix-blend-multiply transition-opacity duration-500 group-hover:opacity-0" />
 
                             <Image
-                                src={heroImage.includes('cloudinary') ? heroImage.replace('/upload/', '/upload/f_auto,q_auto/') : heroImage}
+                                src={getImageUrl(heroImage)}
                                 alt="Zihad Hasan"
                                 fill
                                 className="object-cover object-center grayscale group-hover:grayscale-0 transition-all duration-700 ease-in-out scale-100 group-hover:scale-110"

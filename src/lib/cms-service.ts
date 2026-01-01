@@ -24,6 +24,10 @@ export type {
 };
 
 // Re-export as a unified service for backward compatibility
+/**
+ * @deprecated Use specific services (ProjectService, BlogService, etc.) directly.
+ * This facade will be removed in future versions to improve tree-shaking.
+ */
 export const CMSService = {
     ...ProjectService,
     ...BlogService,

@@ -64,7 +64,8 @@ export function BentoShowcase({ project, blog, tool }: BentoShowcaseProps) {
 
             <BentoGrid>
                 {/* 1. Featured Project (Large) */}
-                {project && (
+                {/* 1. Featured Project (Large) */}
+                {project ? (
                     <BentoGridItem
                         className="md:col-span-2 md:row-span-2 min-h-[400px]"
                         header={
@@ -87,6 +88,21 @@ export function BentoShowcase({ project, blog, tool }: BentoShowcaseProps) {
                                     </div>
                                 </div>
                                 <Link href={`/projects`} className="absolute inset-0 z-20" aria-label={`View project: ${project.title}`} />
+                            </SpotlightItem>
+                        }
+                    />
+                ) : (
+                    <BentoGridItem
+                        className="md:col-span-2 md:row-span-2 min-h-[400px]"
+                        header={
+                            <SpotlightItem className="h-full w-full p-8 flex flex-col justify-center items-center text-center group bg-neutral-900/40">
+                                <div className="h-16 w-16 bg-white/5 rounded-full flex items-center justify-center mb-6">
+                                    <Cpu className="h-8 w-8 text-neutral-500" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-white mb-2">Work in Progress</h3>
+                                <p className="text-neutral-400 max-w-sm">
+                                    Something extraordinary is being built in the lab. Check back soon for the reveal.
+                                </p>
                             </SpotlightItem>
                         }
                     />
