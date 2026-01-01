@@ -8,6 +8,8 @@ import { AlertTriangle, Database, Trash2, RefreshCw, HardDrive, Activity, Users,
 import { toast } from "sonner";
 import { getSystemStats, cleanupSoftDeletedItems } from "@/actions/system";
 import { GlassCard } from "@/components/shared/glass-card";
+import { Switch } from "@/components/ui/switch";
+import { CMSService } from "@/lib/cms-service";
 
 export default function SystemHealthPage() {
     const [stats, setStats] = useState<{
@@ -30,8 +32,11 @@ export default function SystemHealthPage() {
     const loadStats = async () => {
         setLoading(true);
         try {
-            const data = await getSystemStats();
-            setStats(data);
+            const [data, settings] = await Promise.all([
+                getSystemStats(),
+                CMSService.getGlobalSettings()
+            ]);
+            setStats({ ...data, features: settings?.features } as any);
         } catch (error) {
             console.error(error);
             toast.error("Failed to load system stats.");
@@ -81,6 +86,63 @@ export default function SystemHealthPage() {
 
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {/* Feature Control - NEW */}
+                <GlassCard className="p-6 md:col-span-3">
+                    <div className="flex flex-row items-center justify-between space-y-0 pb-2 mb-6">
+                        <div className="flex items-center gap-2">
+                            <Box className="h-5 w-5 text-blue-400" />
+                            <span className="font-bold text-lg text-white">Visibility Control</span>
+                        </div>
+                        <Badge variant="outline" className="border-blue-500/50 text-blue-400">Settings</Badge>
+                    </div>
+
+                    {stats ? (
+                        <div className="grid md:grid-cols-3 gap-6">
+                            {[
+                                { key: "showProjects", label: "Projects Section", desc: "Show portfolio projects." },
+                                { key: "showTools", label: "AI Tools", desc: "Show SaaS tools directory." },
+                                { key: "showBlog", label: "Thinking (Blog)", desc: "Show articles and insights." },
+                                { key: "showEvents", label: "Events & Workshops", desc: "Show upcoming events." },
+                                { key: "showCourses", label: "Courses (LMS)", desc: "Show course catalog." },
+                                { key: "showShop", label: "Store", desc: "Show digital products." },
+                            ].map((feature) => (
+                                <div key={feature.key} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
+                                    <div className="space-y-1">
+                                        <h4 className="text-sm font-medium text-white">{feature.label}</h4>
+                                        <p className="text-xs text-gray-500">{feature.desc}</p>
+                                    </div>
+                                    <Switch
+                                        checked={(stats as any).features?.[feature.key] ?? true}
+                                        onCheckedChange={async (checked) => {
+                                            // Optimistic Update
+                                            const newStats = { ...stats };
+                                            if (!(newStats as any).features) (newStats as any).features = {};
+                                            (newStats as any).features[feature.key] = checked;
+                                            setStats(newStats);
+
+                                            // API Call
+                                            try {
+                                                await CMSService.updateGlobalSettings({
+                                                    features: {
+                                                        ...(stats as any).features,
+                                                        [feature.key]: checked
+                                                    }
+                                                });
+                                                toast.success(`${feature.label} ${checked ? "Enabled" : "Disabled"}`);
+                                            } catch (e) {
+                                                toast.error("Failed to update setting");
+                                                loadStats(); // Revert
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="h-20 animate-pulse bg-white/5 rounded" />
+                    )}
+                </GlassCard>
+
                 {/* Firebase Health */}
                 <GlassCard className="p-6 md:col-span-2">
                     <div className="flex flex-row items-center justify-between space-y-0 pb-2 mb-4">

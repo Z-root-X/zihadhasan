@@ -38,6 +38,8 @@ export interface GlobalSettings {
         showProjects: boolean;
         showTools: boolean;
         showEvents: boolean;
+        showShop: boolean;
+        showCourses: boolean;
     };
 
     // Metadata

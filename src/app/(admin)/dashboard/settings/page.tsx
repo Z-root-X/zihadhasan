@@ -32,6 +32,8 @@ const settingsSchema = z.object({
     showProjects: z.boolean(),
     showTools: z.boolean(),
     showEvents: z.boolean(),
+    showShop: z.boolean(),
+    showCourses: z.boolean(),
     socialGithub: z.string().optional().or(z.literal("")),
     socialLinkedin: z.string().optional().or(z.literal("")),
     socialTwitter: z.string().optional().or(z.literal("")),
@@ -63,6 +65,8 @@ export default function SettingsPage() {
             showProjects: true,
             showTools: true,
             showEvents: true,
+            showShop: true,
+            showCourses: true,
             paymentBkash: "",
             paymentNagad: "",
             bankAccounts: [],
@@ -103,6 +107,8 @@ export default function SettingsPage() {
                         showProjects: data.features?.showProjects ?? true,
                         showTools: data.features?.showTools ?? true,
                         showEvents: data.features?.showEvents ?? true,
+                        showShop: data.features?.showShop ?? true,
+                        showCourses: data.features?.showCourses ?? true,
                         paymentBkash: data.paymentNumbers?.bkash || "",
                         paymentNagad: data.paymentNumbers?.nagad || "",
                         bankAccounts: data.bankAccounts || [],
@@ -141,6 +147,8 @@ export default function SettingsPage() {
                     showProjects: values.showProjects,
                     showTools: values.showTools,
                     showEvents: values.showEvents,
+                    showShop: values.showShop,
+                    showCourses: values.showCourses,
                 },
                 paymentNumbers: {
                     bkash: values.paymentBkash,
@@ -323,6 +331,36 @@ export default function SettingsPage() {
                                         render={({ field }) => (
                                             <Switch
                                                 id="showEvents"
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        )}
+                                    />
+                                </div>
+
+                                <div className="flex items-center justify-between rounded-lg border border-white/5 bg-black/20 p-4">
+                                    <Label htmlFor="showShop" className="text-base text-gray-200">Store / Shop</Label>
+                                    <Controller
+                                        control={form.control}
+                                        name="showShop"
+                                        render={({ field }) => (
+                                            <Switch
+                                                id="showShop"
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        )}
+                                    />
+                                </div>
+
+                                <div className="flex items-center justify-between rounded-lg border border-white/5 bg-black/20 p-4">
+                                    <Label htmlFor="showCourses" className="text-base text-gray-200">Courses (LMS)</Label>
+                                    <Controller
+                                        control={form.control}
+                                        name="showCourses"
+                                        render={({ field }) => (
+                                            <Switch
+                                                id="showCourses"
                                                 checked={field.value}
                                                 onCheckedChange={field.onChange}
                                             />

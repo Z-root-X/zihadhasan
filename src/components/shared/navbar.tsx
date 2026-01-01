@@ -16,7 +16,7 @@ import { Search } from "lucide-react";
 
 const baseNavItems = [
     { name: "Home", href: "/", feature: null },
-    { name: "Courses", href: "/courses", feature: null },
+    { name: "Courses", href: "/courses", feature: "showCourses" },
     { name: "Store", href: "/shop", feature: "showShop" },
     { name: "Tools", href: "/tools", feature: "showTools" },
     { name: "Projects", href: "/projects", feature: "showProjects" },
