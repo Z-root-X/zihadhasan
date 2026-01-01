@@ -148,11 +148,21 @@ export const CourseService = {
     },
 
     getUserCourseRegistration: async (userId: string, courseId: string) => {
+        // 1. Try Deterministic ID (Fast & Cheap)
+        const docId = `${userId}_${courseId}`;
+        const docRef = doc(db, "registrations", docId);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            return { id: docSnap.id, ...docSnap.data() } as Registration;
+        }
+
+        // 2. Fallback: Query (Legacy support or race conditions)
         const q = query(collection(db, "registrations"), where("courseId", "==", courseId), where("userId", "==", userId), limit(1));
         const snapshot = await getDocs(q);
         if (snapshot.empty) return null;
-        const doc = snapshot.docs[0];
-        return { id: doc.id, ...doc.data() } as Registration;
+        const fallbackDoc = snapshot.docs[0];
+        return { id: fallbackDoc.id, ...fallbackDoc.data() } as Registration;
     },
 
     toggleLessonCompletion: async (registrationId: string, lessonId: string, isCompleted: boolean) => {

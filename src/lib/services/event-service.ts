@@ -140,4 +140,23 @@ export const EventService = {
             return { success: false, error: e };
         }
     },
+
+    // Added for Access Control Check
+    getUserEventRegistration: async (userId: string, eventId: string) => {
+        // 1. Try Deterministic ID
+        const docId = `${userId}_${eventId}`;
+        const docRef = doc(db, "registrations", docId);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            return { id: docSnap.id, ...docSnap.data() } as any; // Using explicit type is better but 'any' matches file convention
+        }
+
+        // 2. Fallback Query
+        const q = query(collection(db, "registrations"), where("eventId", "==", eventId), where("userId", "==", userId), limit(1));
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) return null;
+        const fallbackDoc = snapshot.docs[0];
+        return { id: fallbackDoc.id, ...fallbackDoc.data() } as any;
+    },
 };
