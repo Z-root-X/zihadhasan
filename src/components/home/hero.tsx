@@ -99,8 +99,6 @@ export function Hero({ settings, projectCount, toolCount }: HeroProps) {
 
     return (
         <section ref={containerRef} className="relative flex min-h-[95vh] flex-col items-center justify-center overflow-hidden px-4 md:px-8 pt-20 perspective-1000">
-            {/* ... (rest of the component structure remains) */}
-
             {/* Cinematic Perspective Grid */}
             <div className="absolute inset-0 -z-10 bg-black">
                 <div
@@ -122,25 +120,15 @@ export function Hero({ settings, projectCount, toolCount }: HeroProps) {
             <div className="absolute top-[-20%] right-[-10%] h-[500px] w-[500px] rounded-full bg-indigo-600/20 blur-[120px] mix-blend-screen animate-pulse pointer-events-none" />
             <div className="absolute bottom-[-20%] left-[-10%] h-[500px] w-[500px] rounded-full bg-blue-900/20 blur-[120px] mix-blend-screen animate-pulse pointer-events-none" style={{ animationDelay: "2s" }} />
 
-            <div className="container mx-auto relative z-10 flex flex-col items-center justify-center min-h-[80vh]">
-                {/* Text Content - Centered & Massive */}
+            <div className="container mx-auto grid gap-12 lg:grid-cols-12 lg:items-center relative z-10 py-12">
+                {/* Text Content - Massive & Impactful */}
                 <div
-                    className="flex flex-col items-center text-center max-w-5xl mx-auto pt-20 pb-12"
+                    className="flex flex-col items-center text-center lg:col-span-7 lg:items-start lg:text-left pt-10 lg:pt-0"
                 >
-                    <motion.div variants={{ hidden: { opacity: 0, scale: 0.8 }, visible: { opacity: 1, scale: 1 } }}>
-                        <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-primary uppercase tracking-[0.2em] backdrop-blur-md shadow-[0_0_20px_-10px_rgba(59,130,246,0.5)]">
-                            <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                            </span>
-                            System Online
-                        </div>
-                    </motion.div>
-
                     <div className="overflow-hidden relative z-20">
                         <h1
                             ref={headlineRef}
-                            className="mb-8 text-7xl font-black tracking-tighter text-white sm:text-8xl md:text-9xl leading-[0.9] mix-blend-overlay opacity-90"
+                            className="mb-8 text-7xl font-black tracking-tighter text-white sm:text-8xl md:text-9xl xl:text-[10rem] leading-[0.85] mix-blend-plus-lighter"
                         >
                             {typeof heroTitle === 'string' ? (
                                 <span dangerouslySetInnerHTML={{ __html: heroTitle.replace(/\n/g, "<br/>") }} />
@@ -149,15 +137,19 @@ export function Hero({ settings, projectCount, toolCount }: HeroProps) {
                     </div>
 
                     <motion.p
-                        variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
-                        className="mb-12 max-w-2xl text-xl md:text-2xl text-neutral-400 font-light tracking-wide leading-relaxed"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                        className="mb-12 max-w-xl text-lg md:text-xl text-neutral-400 font-light tracking-wide leading-relaxed"
                     >
                         {heroSubtitle}
                     </motion.p>
 
                     <motion.div
-                        variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-                        className="flex flex-wrap items-center justify-center gap-6 relative z-30"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.7 }}
+                        className="flex flex-wrap items-center justify-center lg:justify-start gap-6 relative z-30"
                     >
                         <MagneticButton>
                             <Button size="lg" className="group relative h-14 overflow-hidden rounded-full bg-white px-10 text-lg text-black transition-all hover:bg-white/90 shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]" asChild>
@@ -178,45 +170,81 @@ export function Hero({ settings, projectCount, toolCount }: HeroProps) {
                         </MagneticButton>
                     </motion.div>
 
-                    {/* Stats - Centered & Minimal */}
+                    {/* Stats */}
                     <motion.div
-                        variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-                        className="mt-16 flex flex-wrap items-center justify-center gap-12 border-t border-white/5 pt-8"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 1 }}
+                        className="mt-16 flex flex-wrap items-center justify-center lg:justify-start gap-12 border-t border-white/5 pt-8"
                     >
                         {[
                             { label: "Projects", value: `${projectCount}+` },
                             { label: "Students", value: "500+" },
                             { label: "AI Tools", value: `${toolCount}+` }
                         ].map((stat, i) => (
-                            <div key={i} className="flex flex-col items-center">
-                                <span className="text-3xl font-bold text-white tracking-tight">{stat.value}</span>
+                            <div key={i} className="flex flex-col items-center lg:items-start">
+                                <span className="text-2xl font-bold text-white tracking-tight">{stat.value}</span>
                                 <span className="text-[10px] text-neutral-500 uppercase tracking-[0.2em]">{stat.label}</span>
                             </div>
                         ))}
                     </motion.div>
                 </div>
 
-                {/* 3D Visual Content - Floating Absolute - Decorative only now */}
+                {/* 3D Visual Content - High Detail Card */}
                 <motion.div
-                    initial={{ opacity: 0, x: 100 }}
-                    animate={{ opacity: 0.5, x: 0 }}
-                    transition={{ duration: 1.5, ease: "circOut" }}
-                    className="absolute right-[-10%] top-1/2 -translate-y-1/2 w-[600px] h-[800px] pointer-events-none hidden lg:block -z-10 mix-blend-screen opacity-30 blur-sm"
+                    initial={{ opacity: 0, scale: 0.8, rotateY: 30 }}
+                    animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                    transition={{ duration: 1.2, ease: "circOut" }}
+                    className="lg:col-span-5 relative perspective-2000 hidden lg:block"
                 >
                     <motion.div
+                        onMouseMove={handleMouseMove}
+                        onMouseLeave={handleMouseLeave}
                         style={{
                             rotateX,
                             rotateY,
                             transformStyle: "preserve-3d",
                         }}
-                        className="relative w-full h-full"
+                        className="relative aspect-[3/4] w-full cursor-none group"
                     >
-                        <Image
-                            src={getImageUrl(heroImage)}
-                            alt="Background Art"
-                            fill
-                            className="object-cover object-center opacity-50 grayscale mask-image-fade"
-                        />
+                        {/* Interactive Shine */}
+                        <div className="absolute inset-0 z-30 rounded-[2.5rem] bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                        
+                        <div 
+                            className="relative h-full w-full overflow-hidden rounded-[2.5rem] bg-neutral-900 border border-white/10 shadow-2xl transition-all duration-700 group-hover:shadow-primary/20 group-hover:border-white/20"
+                            style={{ transform: "translateZ(20px)" }}
+                        >
+                            <Image
+                                src={getImageUrl(heroImage)}
+                                alt="Zihad Hasan"
+                                fill
+                                className="object-cover object-center grayscale group-hover:grayscale-0 transition-all duration-700 ease-in-out scale-110 group-hover:scale-100"
+                                priority
+                            />
+                            {/* Overlay Vignette */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
+                        </div>
+
+                        {/* Floating Tech Elements */}
+                        <motion.div
+                            style={{ transform: "translateZ(50px)" }}
+                            className="absolute -bottom-6 -left-6 z-40 flex items-center gap-4 rounded-2xl border border-white/10 bg-black/80 p-5 backdrop-blur-xl shadow-2xl"
+                        >
+                             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                <Code className="h-5 w-5 text-primary" />
+                             </div>
+                             <div>
+                                <div className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold">Location</div>
+                                <div className="text-xs text-white font-mono">DHAKA, BD</div>
+                             </div>
+                        </motion.div>
+
+                        <motion.div
+                            style={{ transform: "translateZ(80px)" }}
+                            className="absolute -top-6 -right-6 z-40 p-4 rounded-2xl border border-white/10 bg-black/60 backdrop-blur-md shadow-2xl"
+                        >
+                            <Sparkles className="h-6 w-6 text-yellow-500" />
+                        </motion.div>
                     </motion.div>
                 </motion.div>
             </div>
