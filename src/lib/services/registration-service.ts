@@ -134,8 +134,8 @@ export const RegistrationService = {
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Registration));
     },
 
-    getAllRegistrations: async () => {
-        const q = query(collection(db, "registrations"), orderBy("registeredAt", "desc"));
+    getAllRegistrations: async (limitCount: number = 100) => {
+        const q = query(collection(db, "registrations"), orderBy("registeredAt", "desc"), limit(limitCount));
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Registration));
     },

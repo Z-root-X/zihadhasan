@@ -17,6 +17,7 @@ export default function DashboardPage() {
         stats: any;
         activities: any[];
         storage: any;
+        rawCounts?: { projects: number; tools: number; posts: number; users: number };
     } | null>(null);
 
     useEffect(() => {
@@ -56,6 +57,12 @@ export default function DashboardPage() {
                         totalStudents: approvedRegs.length,
                         systemHealth: 98,
                         activeUsers
+                    },
+                    rawCounts: {
+                        projects: projects.length,
+                        tools: tools.length,
+                        posts: posts.length,
+                        users: usersData.users.length
                     },
                     activities,
                     storage: {
@@ -102,10 +109,10 @@ export default function DashboardPage() {
                     {/* Content Stats Row */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {[
-                            { label: "Projects", val: 12, icon: FolderGit },
-                            { label: "Tools", val: 5, icon: Hammer },
-                            { label: "Posts", val: 8, icon: FileText },
-                            { label: "Users", val: data.stats.totalStudents, icon: Users },
+                            { label: "Projects", val: (data as any).rawCounts?.projects || 0, icon: FolderGit },
+                            { label: "Tools", val: (data as any).rawCounts?.tools || 0, icon: Hammer },
+                            { label: "Posts", val: (data as any).rawCounts?.posts || 0, icon: FileText },
+                            { label: "Users", val: (data as any).rawCounts?.users || 0, icon: Users },
                         ].map((s, i) => (
                             <GlassCard key={i} className="p-4 flex items-center gap-3">
                                 <div className="p-2 rounded-lg bg-white/5 text-white/60">
