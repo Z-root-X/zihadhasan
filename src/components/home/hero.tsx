@@ -122,25 +122,25 @@ export function Hero({ settings, projectCount, toolCount }: HeroProps) {
             <div className="absolute top-[-20%] right-[-10%] h-[500px] w-[500px] rounded-full bg-indigo-600/20 blur-[120px] mix-blend-screen animate-pulse pointer-events-none" />
             <div className="absolute bottom-[-20%] left-[-10%] h-[500px] w-[500px] rounded-full bg-blue-900/20 blur-[120px] mix-blend-screen animate-pulse pointer-events-none" style={{ animationDelay: "2s" }} />
 
-            <div className="container mx-auto grid gap-16 lg:grid-cols-12 lg:items-center relative z-10">
-                {/* Text Content - Immersive Typography */}
+            <div className="container mx-auto relative z-10 flex flex-col items-center justify-center min-h-[80vh]">
+                {/* Text Content - Centered & Massive */}
                 <div
-                    className="flex flex-col items-center text-center lg:col-span-7 lg:items-start lg:text-left pt-10 lg:pt-0"
+                    className="flex flex-col items-center text-center max-w-5xl mx-auto pt-20 pb-12"
                 >
                     <motion.div variants={{ hidden: { opacity: 0, scale: 0.8 }, visible: { opacity: 1, scale: 1 } }}>
-                        <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-primary uppercase tracking-widest backdrop-blur-md">
+                        <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-primary uppercase tracking-[0.2em] backdrop-blur-md shadow-[0_0_20px_-10px_rgba(59,130,246,0.5)]">
                             <span className="relative flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                             </span>
-                            Available for Work
+                            System Online
                         </div>
                     </motion.div>
 
-                    <div className="overflow-hidden">
+                    <div className="overflow-hidden relative z-20">
                         <h1
                             ref={headlineRef}
-                            className="mb-8 text-6xl font-black tracking-tighter text-white sm:text-8xl xl:text-9xl leading-[0.9] mix-blend-overlay opacity-90 transform-gpu"
+                            className="mb-8 text-7xl font-black tracking-tighter text-white sm:text-8xl md:text-9xl leading-[0.9] mix-blend-overlay opacity-90"
                         >
                             {typeof heroTitle === 'string' ? (
                                 <span dangerouslySetInnerHTML={{ __html: heroTitle.replace(/\n/g, "<br/>") }} />
@@ -150,17 +150,17 @@ export function Hero({ settings, projectCount, toolCount }: HeroProps) {
 
                     <motion.p
                         variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
-                        className="mb-12 max-w-xl text-xl text-neutral-400 font-light tracking-wide leading-relaxed"
+                        className="mb-12 max-w-2xl text-xl md:text-2xl text-neutral-400 font-light tracking-wide leading-relaxed"
                     >
                         {heroSubtitle}
                     </motion.p>
 
                     <motion.div
                         variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-                        className="flex flex-wrap items-center justify-center lg:justify-start gap-6"
+                        className="flex flex-wrap items-center justify-center gap-6 relative z-30"
                     >
                         <MagneticButton>
-                            <Button size="lg" className="group relative h-14 overflow-hidden rounded-full bg-white px-10 text-lg text-black transition-all hover:bg-white/90" asChild>
+                            <Button size="lg" className="group relative h-14 overflow-hidden rounded-full bg-white px-10 text-lg text-black transition-all hover:bg-white/90 shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)]" asChild>
                                 <Link href="/projects">
                                     <span className="relative z-10 flex items-center font-bold tracking-tight">
                                         View Work <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -170,7 +170,7 @@ export function Hero({ settings, projectCount, toolCount }: HeroProps) {
                         </MagneticButton>
 
                         <MagneticButton>
-                            <Button size="lg" variant="ghost" className="h-14 rounded-full px-10 text-lg text-white hover:bg-white/5 hover:text-primary transition-all" asChild>
+                            <Button size="lg" variant="ghost" className="h-14 rounded-full px-10 text-lg text-white hover:bg-white/5 hover:text-primary transition-all border border-white/10 backdrop-blur-sm" asChild>
                                 <Link href="/contact">
                                     Contact Me
                                 </Link>
@@ -178,103 +178,45 @@ export function Hero({ settings, projectCount, toolCount }: HeroProps) {
                         </MagneticButton>
                     </motion.div>
 
-                    {/* Floating Stats Bar */}
+                    {/* Stats - Centered & Minimal */}
                     <motion.div
                         variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-                        className="mt-12 flex flex-wrap items-center justify-center lg:justify-start gap-8 border-t border-white/10 pt-8"
+                        className="mt-16 flex flex-wrap items-center justify-center gap-12 border-t border-white/5 pt-8"
                     >
                         {[
-                            { label: "Projects Built", value: `${projectCount}+` },
+                            { label: "Projects", value: `${projectCount}+` },
                             { label: "Students", value: "500+" },
                             { label: "AI Tools", value: `${toolCount}+` }
                         ].map((stat, i) => (
-                            <div key={i} className="flex flex-col">
-                                <span className="text-2xl font-bold text-white">{stat.value}</span>
-                                <span className="text-sm text-neutral-500 uppercase tracking-wider">{stat.label}</span>
+                            <div key={i} className="flex flex-col items-center">
+                                <span className="text-3xl font-bold text-white tracking-tight">{stat.value}</span>
+                                <span className="text-[10px] text-neutral-500 uppercase tracking-[0.2em]">{stat.label}</span>
                             </div>
                         ))}
                     </motion.div>
                 </div>
 
-                {/* 3D Visual Content - Noir Style with Cinematic Fade */}
+                {/* 3D Visual Content - Floating Absolute - Decorative only now */}
                 <motion.div
-                    initial={{ opacity: 0, filter: "blur(20px)" }}
-                    animate={{ opacity: 1, filter: "blur(0px)" }}
-                    transition={{ duration: 1.5, delay: 0.5, ease: "circOut" }}
-                    style={{ perspective: 2000 }}
-                    className="relative lg:col-span-5 mx-auto w-full max-w-md lg:max-w-full"
+                    initial={{ opacity: 0, x: 100 }}
+                    animate={{ opacity: 0.5, x: 0 }}
+                    transition={{ duration: 1.5, ease: "circOut" }}
+                    className="absolute right-[-10%] top-1/2 -translate-y-1/2 w-[600px] h-[800px] pointer-events-none hidden lg:block -z-10 mix-blend-screen opacity-30 blur-sm"
                 >
                     <motion.div
-                        onMouseMove={handleMouseMove}
-                        onMouseLeave={handleMouseLeave}
                         style={{
                             rotateX,
                             rotateY,
                             transformStyle: "preserve-3d",
                         }}
-                        className="relative aspect-[3/4] w-full cursor-pointer group"
+                        className="relative w-full h-full"
                     >
-                        {/* Card Reflection/Texture */}
-                        <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none rounded-[2rem] mix-blend-overlay" />
-
-                        {/* Main Image Container with FADE TO BLACK MASK */}
-                        <div
-                            className="relative h-full w-full overflow-hidden rounded-[2rem] bg-neutral-900 shadow-2xl transition-all duration-500 group-hover:shadow-[0_0_100px_-20px_rgba(255,255,255,0.1)]"
-                            style={{
-                                transform: "translateZ(20px)",
-                                maskImage: "linear-gradient(to bottom, black 80%, transparent 100%)",
-                                WebkitMaskImage: "linear-gradient(to bottom, black 60%, transparent 100%)"
-                            }}
-                        >
-                            {/* Noir Filter: Active by default, fades out on hover to reveal true colors */}
-                            <div className="absolute inset-0 bg-neutral-950/20 z-10 mix-blend-multiply transition-opacity duration-500 group-hover:opacity-0" />
-
-                            <Image
-                                src={getImageUrl(heroImage)}
-                                alt="Zihad Hasan"
-                                fill
-                                className="object-cover object-center grayscale group-hover:grayscale-0 transition-all duration-700 ease-in-out scale-100 group-hover:scale-110"
-                                priority
-                                placeholder="blur"
-                                blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+P+/HgAFhAJ/wlseKgAAAABJRU5ErkJggg=="
-                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                            />
-                        </div>
-
-                        {/* Floating Tech Badge - Moved Z-Index higher and adjusted positioning */}
-                        <motion.div
-                            initial={{ y: 20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ delay: 1 }}
-                            style={{ transform: "translateZ(60px)" }}
-                            className="absolute -bottom-6 -left-6 z-50 hidden md:flex items-center gap-4 rounded-xl border border-white/10 bg-black/80 p-4 backdrop-blur-md shadow-2xl"
-                        >
-                            <div className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                            <div className="font-mono text-xs font-bold text-white tracking-wider">
-                                <div>LOC: DHA_BD</div>
-                                <div>SYS: ONLINE</div>
-                            </div>
-                        </motion.div>
-
-                        {/* Layered Parallax Elements (New Request) */}
-                        <motion.div
-                            style={{ x: useTransform(mouseX, [-0.5, 0.5], [20, -20]), y: useTransform(mouseY, [-0.5, 0.5], [20, -20]), transform: "translateZ(80px)" }}
-                            className="absolute -top-8 -right-8 z-40 hidden md:block"
-                        >
-                            <div className="p-4 rounded-2xl border border-white/10 bg-black/60 backdrop-blur-md shadow-xl">
-                                <Code className="h-6 w-6 text-blue-400" />
-                            </div>
-                        </motion.div>
-
-                        <motion.div
-                            style={{ x: useTransform(mouseX, [-0.5, 0.5], [-15, 15]), y: useTransform(mouseY, [-0.5, 0.5], [-15, 15]), transform: "translateZ(40px)" }}
-                            className="absolute top-1/2 -left-12 z-30 hidden md:block"
-                        >
-                            <div className="p-3 rounded-full border border-white/5 bg-indigo-500/20 backdrop-blur-sm">
-                                <Sparkles className="h-4 w-4 text-indigo-300" />
-                            </div>
-                        </motion.div>
-
+                        <Image
+                            src={getImageUrl(heroImage)}
+                            alt="Background Art"
+                            fill
+                            className="object-cover object-center opacity-50 grayscale mask-image-fade"
+                        />
                     </motion.div>
                 </motion.div>
             </div>

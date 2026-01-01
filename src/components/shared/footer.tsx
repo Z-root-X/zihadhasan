@@ -17,6 +17,9 @@ export function Footer() {
         });
     }, []);
 
+    // Hide footer on home page as requested
+    if (pathname === "/") return null;
+
     const getIcon = (platform: string) => {
         switch (platform) {
             case "github": return <Github className="h-5 w-5" />;
@@ -64,7 +67,7 @@ export function Footer() {
                     </div>
 
                     <p className="text-sm text-muted-foreground mt-auto pt-8">
-                        © {new Date().getFullYear()} Zihad Hasan. Built with Next.js & AI.
+                        © {new Date().getFullYear()} Zihad Hasan.
                     </p>
                 </div>
 
