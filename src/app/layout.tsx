@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Inter_Tight, Outfit, Anek_Bangla } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
-import { SmoothScroll } from "@/components/smooth-scroll";
+import { ThemeProvider } from "@/components/providers/theme-provider";
+import { SmoothScroll } from "@/components/providers/smooth-scroll";
 import { cn } from "@/lib/utils";
-import { GoogleTagManager } from "@/components/google-tag-manager";
+import { GoogleTagManager } from "@/components/providers/google-tag-manager";
 import { generatePersonSchema } from "@/lib/schema-generator";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { AuthModal } from "@/components/auth/auth-modal";

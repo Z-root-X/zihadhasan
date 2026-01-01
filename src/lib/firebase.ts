@@ -1,14 +1,15 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAGFk8Cr9PYUgjuoKDGu_waSZJAn7y1Mhw",
-  authDomain: "zihadhasan.firebaseapp.com",
-  projectId: "zihadhasan",
-  storageBucket: "zihadhasan.firebasestorage.app",
-  messagingSenderId: "209783034748",
-  appId: "1:209783034748:web:26028c4398d3e4cb144af9"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);
@@ -39,20 +40,19 @@ if (typeof window !== "undefined") {
     }
   });
 
-  // App Check (ReCaptcha Enterprise)
-  const { initializeAppCheck, ReCaptchaEnterpriseProvider } = require("firebase/app-check");
+  // App Check Initialization
 
   if (typeof window !== "undefined") {
-    // Use a valid site key from environment or console. 
-    // Using a placeholder here that the user must replace or provide via ENV.
-    const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_KEY || "YOUR_RECAPTCHA_ENTERPRISE_KEY";
+    const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_KEY;
 
-    if (siteKey !== "YOUR_RECAPTCHA_ENTERPRISE_KEY") {
+    if (siteKey) {
       initializeAppCheck(app, {
-        provider: new ReCaptchaEnterpriseProvider(siteKey),
+        provider: new ReCaptchaV3Provider(siteKey),
         isTokenAutoRefreshEnabled: true
       });
-      console.log("Firebase App Check Initialized");
+      console.log("Firebase App Check Initialized (Standard v3)");
+    } else {
+      console.warn("ReCaptcha Key not found in environment variables.");
     }
   }
 }
